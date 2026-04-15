@@ -54,7 +54,7 @@ export function StChip({ stock, min }) {
 export function Toast({ msg, type }) {
   const T = useT();
   const c = type === "error" ? T.red : type === "success" ? T.green : T.amber;
-  return <div className="spring-in" style={{ position: "fixed", bottom: 32, right: 32, zIndex: 500, padding: "16px 24px", borderRadius: T.radiusXl, background: T.surfaceStrong, backdropFilter: "blur(24px)", border: `1px solid ${T.border}`, borderLeft: `6px solid ${c}`, color: T.text, fontSize: 14, fontWeight: 600, boxShadow: T.shadowXl, display: "flex", alignItems: "center", gap: 12 }}>
+  return <div className="fade-up" style={{ position: "fixed", bottom: 32, right: 32, zIndex: 5000, padding: "16px 24px", borderRadius: T.radiusXl, background: T.surfaceStrong, backdropFilter: "blur(24px)", border: `1px solid ${T.border}`, borderLeft: `6px solid ${c}`, color: T.text, fontSize: 14, fontWeight: 600, boxShadow: T.shadowXl, display: "flex", alignItems: "center", gap: 12 }}>
     <div style={{ width: 10, height: 10, borderRadius: "50%", background: c, boxShadow: `0 0 10px ${c}` }} />
     {msg}
   </div>;
@@ -70,11 +70,11 @@ export function Modal({ open, onClose, title, children, footer, width = 560 }) {
   }, [open]);
   if (!open) return null;
   return (
-    <div onClick={onClose} className="modal-overlay fade-up" style={{ position: "fixed", top: 0, left: 0, right: 0, bottom: 0, width: "100vw", height: "100vh", zIndex: 9999, display: "flex", alignItems: "center", justifyContent: "center", padding: 16 }}>
+    <div onClick={onClose} className="modal-overlay fade-up" style={{ position: "fixed", top: 0, left: 0, right: 0, bottom: 0, width: "100vw", height: "100vh", zIndex: 99999, display: "flex", alignItems: "center", justifyContent: "center", padding: 16 }}>
       <div className="glass-strong spring-in" onClick={e => e.stopPropagation()} style={{ width: "100%", maxWidth: width, borderRadius: T.radiusXl, maxHeight: "90vh", display: "flex", flexDirection: "column", overflow: "hidden" }}>
         <div style={{ padding: "20px 24px", borderBottom: `1px solid ${T.borderSubtle}`, display: "flex", justifyContent: "space-between", alignItems: "center", background: T.surfaceStrong }}>
           <div style={{ fontWeight: 800, fontSize: 18, color: T.text, letterSpacing: "-0.02em" }}>{title}</div>
-          <button onClick={onClose} className="btn-ghost" style={{ padding: 8, borderRadius: "50%" }}><X size={18} /></button>
+          <button type="button" onClick={onClose} className="btn-ghost" style={{ padding: 8, borderRadius: "50%" }}><X size={18} /></button>
         </div>
         <div style={{ padding: 24, overflowY: "auto", background: T.surfaceGlass }}>{children}</div>
         {footer && <div style={{ padding: "20px 24px", borderTop: `1px solid ${T.borderSubtle}`, background: T.surfaceStrong, display: "flex", justifyContent: "flex-end", gap: 12 }}>{footer}</div>}
@@ -93,7 +93,7 @@ export function KCard({ label, value, sub, icon: Icon, color, delta, onClick, ac
         <div style={{ fontSize: 13, fontWeight: 700, color: T.textSub, marginBottom: 8, letterSpacing: "0.05em", textTransform: "uppercase" }}>{label}</div>
         <div style={{ fontSize: 32, fontWeight: 800, color: T.text, letterSpacing: "-0.03em" }}>{value}</div>
       </div>
-      <div style={{ width: 48, height: 48, borderRadius: T.radius, background: `${c}15`, display: "flex", alignItems: "center", justifyContent: "center", color: c, boxShadow: `0 4px 16px ${c}20` }}>
+      <div style={{ width: 48, height: 48, borderRadius: T.radius, background: `${c}15`, display: "flex", alignItems: "center", justifyContent: "center", color: c, boxShadow: `inset 0 1px 1px rgba(255,255,255,0.2)` }}>
         <Icon size={24} strokeWidth={2.5} />
       </div>
     </div>
@@ -108,7 +108,7 @@ export function KCard({ label, value, sub, icon: Icon, color, delta, onClick, ac
   </div>;
 }
 
-// MOBILE LAYOUT FIX
+// FULLY REWRITTEN PERIOD BAR FOR FLAWLESS MOBILE & DESKTOP
 export function PeriodBar({ df, setDf, dt, setDt, preset, setPreset }) {
   const T = useT();
   const PRESETS = [
@@ -128,14 +128,16 @@ export function PeriodBar({ df, setDf, dt, setDt, preset, setPreset }) {
     }
   };
   return (
-    <div className="filter-wrap period-bar-wrap" style={{ background: T.surfaceGlass, padding: "4px 8px", borderRadius: T.radius, border: `1px solid ${T.borderSubtle}` }}>
-      <select value={preset || ""} onChange={e => applyPreset(e.target.value)} className="sel" style={{ width: 140, fontWeight: 600, border: "none", background: "transparent", boxShadow: "none" }}>
+    <div className="glass" style={{ display: "flex", alignItems: "center", gap: 10, padding: "6px 12px", borderRadius: T.radiusFull, flexWrap: "wrap", width: "fit-content" }}>
+      <select value={preset || ""} onChange={e => applyPreset(e.target.value)} style={{ background: "transparent", border: "none", outline: "none", color: T.text, fontWeight: 700, fontSize: 13, cursor: "pointer", padding: "4px 8px" }}>
         {PRESETS.map(p => <option key={p.k} value={p.k}>{p.l}</option>)}
       </select>
-      <div className="hide-mob" style={{ width: 1, height: 20, background: T.borderSubtle }} />
-      <input type="date" className="inp" value={df || ""} onChange={e => { setDf(e.target.value); setPreset("custom"); }} style={{ width: 140, border: "none", background: "transparent", boxShadow: "none" }} />
-      <span style={{ color: T.textMuted, fontWeight: 700 }}>→</span>
-      <input type="date" className="inp" value={dt || ""} onChange={e => { setDt(e.target.value); setPreset("custom"); }} style={{ width: 140, border: "none", background: "transparent", boxShadow: "none" }} />
+      <div className="hide-mob" style={{ width: 1, height: 18, background: T.borderSubtle }} />
+      <div style={{ display: "flex", alignItems: "center", gap: 6, flexWrap: "nowrap" }}>
+        <input type="date" value={df || ""} onChange={e => { setDf(e.target.value); setPreset("custom"); }} style={{ background: "transparent", border: "none", outline: "none", color: T.textSub, fontSize: 13, padding: "4px", width: 110, fontWeight: 500 }} />
+        <span style={{ color: T.textMuted, fontWeight: 800 }}>→</span>
+        <input type="date" value={dt || ""} onChange={e => { setDt(e.target.value); setPreset("custom"); }} style={{ background: "transparent", border: "none", outline: "none", color: T.textSub, fontSize: 13, padding: "4px", width: 110, fontWeight: 500 }} />
+      </div>
     </div>
   );
 }
