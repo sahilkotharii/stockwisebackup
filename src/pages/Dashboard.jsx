@@ -71,25 +71,25 @@ export default function Dashboard({ ctx }) {
   return <div style={{ display:"flex", flexDirection:"column", gap:24 }}>
     
     {(oos.length > 0 || lowStock.length > 0) && (
-      <div className="glass fade-up" style={{ padding:"16px 20px", borderRadius: T.radius, background:T.amberBg, borderColor:`${T.amber}30` }}>
+      <div className="glass fade-up liquid-trans" style={{ padding:"16px 20px", borderRadius: T.radius, background:T.amberBg, borderColor:`${T.amber}30` }}>
         <div style={{ display:"flex", alignItems:"center", gap:12, marginBottom: (alertOpen.oos || alertOpen.low) ? 12 : 0 }}>
-          <div style={{ width: 32, height: 32, borderRadius: "50%", background: `${T.amber}20`, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+          <div className="liquid-trans" style={{ width: 32, height: 32, borderRadius: "50%", background: `${T.amber}20`, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, boxShadow: `0 2px 10px ${T.amber}30` }}>
             <AlertTriangle size={18} color={T.amber} />
           </div>
-          <div style={{ fontWeight:700, fontSize:15, color:T.amber, flex:1, letterSpacing: "-0.01em" }}>Inventory Action Required</div>
+          <div style={{ fontWeight:800, fontSize:15, color:T.amber, flex:1, letterSpacing: "-0.01em" }}>Inventory Action Required</div>
         </div>
         
-        <div style={{ display:"flex", flexDirection:"column", gap:8 }}>
+        <div className="spring-down" style={{ display:"flex", flexDirection:"column", gap:8 }}>
           {oos.length > 0 && (
             <div>
-              <button onClick={() => setAlertOpen(p => ({...p, oos: !p.oos}))} style={{ background:"none", border:"none", cursor:"pointer", display:"flex", alignItems:"center", gap:8, padding:"4px 0", width:"100%" }}>
+              <button className="liquid-trans" onClick={() => setAlertOpen(p => ({...p, oos: !p.oos}))} style={{ background:"none", border:"none", cursor:"pointer", display:"flex", alignItems:"center", gap:8, padding:"4px 0", width:"100%" }}>
                 <span style={{ color:T.red, fontWeight:700, fontSize:13 }}>{oos.length} Out of Stock</span>
                 <span style={{ fontSize:11, color:T.textMuted, marginLeft:4, fontWeight: 600 }}>{alertOpen.oos ? "▲ Hide" : "▼ View Products"}</span>
               </button>
               {alertOpen.oos && (
-                <div style={{ display:"flex", flexWrap:"wrap", gap:6, marginTop:8, paddingLeft:4 }}>
+                <div className="spring-in" style={{ display:"flex", flexWrap:"wrap", gap:6, marginTop:8, paddingLeft:4 }}>
                   {oos.map(p => (
-                    <span key={p.id} style={{ fontSize:11, padding:"4px 10px", borderRadius:T.radiusFull, background:`${T.red}15`, color:T.red, fontWeight:600, border:`1px solid ${T.red}25` }}>
+                    <span key={p.id} className="liquid-trans" style={{ fontSize:11, padding:"4px 10px", borderRadius:T.radiusFull, background:`${T.red}15`, color:T.red, fontWeight:600, border:`1px solid ${T.red}25`, cursor: "default" }}>
                       {p.name}
                     </span>
                   ))}
@@ -99,14 +99,14 @@ export default function Dashboard({ ctx }) {
           )}
           {lowStock.length > 0 && (
             <div>
-              <button onClick={() => setAlertOpen(p => ({...p, low: !p.low}))} style={{ background:"none", border:"none", cursor:"pointer", display:"flex", alignItems:"center", gap:8, padding:"4px 0", width:"100%" }}>
+              <button className="liquid-trans" onClick={() => setAlertOpen(p => ({...p, low: !p.low}))} style={{ background:"none", border:"none", cursor:"pointer", display:"flex", alignItems:"center", gap:8, padding:"4px 0", width:"100%" }}>
                 <span style={{ color:T.amber, fontWeight:700, fontSize:13 }}>{lowStock.length} Low Stock</span>
                 <span style={{ fontSize:11, color:T.textMuted, marginLeft:4, fontWeight: 600 }}>{alertOpen.low ? "▲ Hide" : "▼ View Products"}</span>
               </button>
               {alertOpen.low && (
-                <div style={{ display:"flex", flexWrap:"wrap", gap:6, marginTop:8, paddingLeft:4 }}>
+                <div className="spring-in" style={{ display:"flex", flexWrap:"wrap", gap:6, marginTop:8, paddingLeft:4 }}>
                   {lowStock.map(p => (
-                    <span key={p.id} style={{ fontSize:11, padding:"4px 10px", borderRadius:T.radiusFull, background:`${T.amber}15`, color:T.amber, fontWeight:600, border:`1px solid ${T.amber}30` }}>
+                    <span key={p.id} className="liquid-trans" style={{ fontSize:11, padding:"4px 10px", borderRadius:T.radiusFull, background:`${T.amber}15`, color:T.amber, fontWeight:600, border:`1px solid ${T.amber}30`, cursor: "default" }}>
                       {p.name} <span style={{ opacity:0.7, marginLeft: 2 }}>({getStock(p.id)})</span>
                     </span>
                   ))}
@@ -127,15 +127,15 @@ export default function Dashboard({ ctx }) {
       <KCard label="Units Returned"  value={String(retTxns.reduce((s,t)=>s+Number(t.qty||0),0))} sub={`${retTxns.length} total return entries`} icon={DollarSign} color={T.red} />
     </div>
 
-    <div className="chart-row" style={{ display:"grid", gridTemplateColumns:"repeat(auto-fit, minmax(400px, 1fr))", gap:24 }}>
+    <div className="chart-row fade-up" style={{ display:"grid", gridTemplateColumns:"repeat(auto-fit, minmax(400px, 1fr))", gap:24 }}>
       <div className="glass" style={{ padding:"24px 24px 16px", borderRadius:T.radius }}>
-        <div style={{ fontFamily:T.displayFont, fontWeight:700, fontSize:16, color:T.text, marginBottom:20 }}>Revenue vs Purchase</div>
+        <div style={{ fontFamily:T.displayFont, fontWeight:800, fontSize:16, color:T.text, marginBottom:20 }}>Revenue vs Purchase</div>
         <ResponsiveContainer width="100%" height={240}>
           <BarChart data={dailyData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
             <CartesianGrid strokeDasharray="3 3" stroke={T.isDark?"rgba(255,255,255,0.05)":"rgba(0,0,0,0.05)"} vertical={false} />
             <XAxis dataKey="date" tick={{ fontSize:11, fill:T.textMuted, fontWeight: 500 }} axisLine={false} tickLine={false} dy={10} />
             <YAxis tick={{ fontSize:11, fill:T.textMuted, fontWeight: 500 }} tickFormatter={v => v>=1000?(v/1000).toFixed(0)+"k":v} axisLine={false} tickLine={false} />
-            <Tooltip content={<CTip fmt />} cursor={{ fill: T.isDark ? '#27272a' : '#f1f5f9' }} />
+            <Tooltip content={<CTip fmt />} cursor={{ fill: T.isDark ? 'rgba(255,255,255,0.02)' : 'rgba(0,0,0,0.02)' }} />
             <Bar dataKey="revenue"  name="Sales (incl GST)"    fill={T.green} radius={[4,4,0,0]} maxBarSize={40} />
             <Bar dataKey="purchase" name="Purchase (incl GST)" fill={T.blue}  radius={[4,4,0,0]} maxBarSize={40} />
           </BarChart>
@@ -144,8 +144,8 @@ export default function Dashboard({ ctx }) {
 
       <div className="glass" style={{ padding:24, borderRadius:T.radius, display: "flex", flexDirection: "column" }}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom:20 }}>
-          <div style={{ fontFamily:T.displayFont, fontWeight:700, fontSize:16, color:T.text }}>Top Selling Products</div>
-          <button onClick={() => setPage && setPage("reports")} style={{ background: "none", border: "none", color: T.accent, fontSize: 12, fontWeight: 600, cursor: "pointer", display: "flex", alignItems: "center", gap: 4 }}>
+          <div style={{ fontFamily:T.displayFont, fontWeight:800, fontSize:16, color:T.text }}>Top Selling Products</div>
+          <button className="btn-ghost" onClick={() => setPage && setPage("reports")} style={{ padding: "6px 12px", color: T.accent, fontSize: 12, fontWeight: 700 }}>
             View Report <ArrowRight size={14} />
           </button>
         </div>
@@ -155,15 +155,15 @@ export default function Dashboard({ ctx }) {
           : <div style={{ display:"flex", flexDirection:"column", gap:16, flex: 1, justifyContent: "center" }}>
             {topProds.map((item,i) => {
               const pct = (item.units/topProds[0].units)*100;
-              return <div key={i} style={{ display:"flex", alignItems:"center", gap:14 }}>
-                <div style={{ width:28, height:28, borderRadius: "50%", background:i===0?`linear-gradient(135deg,${T.accent},${T.accentDark})`:T.isDark?"#27272a":"#F1F5F9", display:"flex", alignItems:"center", justifyContent:"center", fontSize:12, fontWeight:700, color:i===0?"#fff":T.textSub, flexShrink:0, boxShadow: i===0?`0 2px 8px ${T.accent}40`:"none" }}>{i+1}</div>
+              return <div key={i} className="liquid-trans" style={{ display:"flex", alignItems:"center", gap:14, padding: "4px", borderRadius: T.radius }}>
+                <div style={{ width:28, height:28, borderRadius: "50%", background:i===0?`linear-gradient(135deg,${T.accent},${T.accentDark})`:T.isDark?"rgba(255,255,255,0.08)":"rgba(0,0,0,0.04)", display:"flex", alignItems:"center", justifyContent:"center", fontSize:12, fontWeight:800, color:i===0?"#fff":T.textSub, flexShrink:0, boxShadow: i===0?`0 4px 12px ${T.accent}50`:"none" }}>{i+1}</div>
                 <div style={{ flex:1, minWidth:0 }}>
                   <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 6 }}>
                     <div style={{ fontSize:13, fontWeight:600, color:T.text, overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap", paddingRight: 10 }}>{item.product?.name}</div>
                     <div style={{ fontSize:13, fontWeight:700, color:T.text, flexShrink:0 }}>{item.units}<span style={{ fontSize:11, color:T.textMuted, fontWeight: 500 }}> units</span></div>
                   </div>
                   <div style={{ height:6, borderRadius: T.radiusFull, background:T.isDark?"rgba(255,255,255,0.08)":"rgba(0,0,0,.06)", overflow:"hidden" }}>
-                    <div style={{ height:"100%", borderRadius: T.radiusFull, width:`${pct}%`, background: i===0 ? `linear-gradient(90deg,${T.accent},${T.accentDark})` : T.textMuted }} />
+                    <div className="liquid-trans" style={{ height:"100%", borderRadius: T.radiusFull, width:`${pct}%`, background: i===0 ? `linear-gradient(90deg,${T.accent},${T.accentDark})` : T.textMuted }} />
                   </div>
                 </div>
               </div>;
@@ -172,10 +172,10 @@ export default function Dashboard({ ctx }) {
       </div>
     </div>
 
-    <div className="glass" style={{ padding:24, borderRadius:T.radius }}>
+    <div className="glass fade-up" style={{ padding:24, borderRadius:T.radius }}>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom:20 }}>
-        <div style={{ fontFamily:T.displayFont, fontWeight:700, fontSize:16, color:T.text }}>Recent Transactions</div>
-        <button onClick={() => setPage && setPage("transactions")} style={{ background: "none", border: "none", color: T.accent, fontSize: 12, fontWeight: 600, cursor: "pointer", display: "flex", alignItems: "center", gap: 4 }}>
+        <div style={{ fontFamily:T.displayFont, fontWeight:800, fontSize:16, color:T.text }}>Recent Transactions</div>
+        <button className="btn-ghost" onClick={() => setPage && setPage("transactions")} style={{ padding: "6px 12px", color: T.accent, fontSize: 12, fontWeight: 700 }}>
           View All <ArrowRight size={14} />
         </button>
       </div>
@@ -189,13 +189,13 @@ export default function Dashboard({ ctx }) {
             ))}</tr></thead>
             <tbody>{recentBills.map(b => {
               const vn = vendors?.find(v => v.id === b.vendorId);
-              return <tr key={b.id} className="trow">
+              return <tr key={b.id} className="trow liquid-trans">
                 <td className="td" style={{ fontWeight:700, color:T.text }}>{b.billNo}</td>
-                <td className="td m">{fmtDate(b.date)}</td>
-                <td className="td"><span className="badge" style={{ background:b.type==="sale"?T.greenBg:T.blueBg, color:b.type==="sale"?T.green:T.blue }}>{b.type}</span></td>
+                <td className="td m" style={{ fontWeight: 500 }}>{fmtDate(b.date)}</td>
+                <td className="td"><span className="badge liquid-trans" style={{ background:b.type==="sale"?T.greenBg:T.blueBg, color:b.type==="sale"?T.green:T.blue }}>{b.type}</span></td>
                 <td className="td m" style={{ fontWeight: 600 }}>{(b.items||[]).length} items</td>
-                <td className="td" style={{ fontWeight: 500 }}>{vn?.name||"—"}</td>
-                <td className="td r" style={{ fontWeight:700, color:b.type==="sale"?T.green:T.blue, fontSize: 14 }}>{fmtCur(b.total)}</td>
+                <td className="td" style={{ fontWeight: 600 }}>{vn?.name||"—"}</td>
+                <td className="td r" style={{ fontWeight:800, color:b.type==="sale"?T.green:T.blue, fontSize: 14 }}>{fmtCur(b.total)}</td>
               </tr>;
             })}</tbody>
           </table>
