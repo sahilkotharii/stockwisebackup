@@ -60,6 +60,7 @@ export function Toast({ msg, type }) {
   </div>;
 }
 
+// FULL SCREEN MODAL FIX
 export function Modal({ open, onClose, title, children, footer, width = 560 }) {
   const T = useT();
   useEffect(() => {
@@ -69,8 +70,8 @@ export function Modal({ open, onClose, title, children, footer, width = 560 }) {
   }, [open]);
   if (!open) return null;
   return (
-    <div onClick={onClose} className="modal-overlay fade-up" style={{ position: "fixed", inset: 0, zIndex: 200, display: "flex", alignItems: "center", justifyContent: "center", padding: 16 }}>
-      <div className="glass-strong spring-in" onClick={e => e.stopPropagation()} style={{ width: "100%", maxWidth: width, borderRadius: T.radiusXl, maxHeight: "90vh", display: "flex", flexDirection: "column", overflow: "hidden", transformOrigin: "center" }}>
+    <div onClick={onClose} className="modal-overlay fade-up" style={{ position: "fixed", top: 0, left: 0, right: 0, bottom: 0, width: "100vw", height: "100vh", zIndex: 9999, display: "flex", alignItems: "center", justifyContent: "center", padding: 16 }}>
+      <div className="glass-strong spring-in" onClick={e => e.stopPropagation()} style={{ width: "100%", maxWidth: width, borderRadius: T.radiusXl, maxHeight: "90vh", display: "flex", flexDirection: "column", overflow: "hidden" }}>
         <div style={{ padding: "20px 24px", borderBottom: `1px solid ${T.borderSubtle}`, display: "flex", justifyContent: "space-between", alignItems: "center", background: T.surfaceStrong }}>
           <div style={{ fontWeight: 800, fontSize: 18, color: T.text, letterSpacing: "-0.02em" }}>{title}</div>
           <button onClick={onClose} className="btn-ghost" style={{ padding: 8, borderRadius: "50%" }}><X size={18} /></button>
@@ -86,7 +87,7 @@ export function KCard({ label, value, sub, icon: Icon, color, delta, onClick, ac
   const T = useT();
   const c = color || T.accent;
   
-  return <div className="glass" style={{ padding: 24, borderRadius: T.radius, cursor: onClick ? "pointer" : "default", border: active ? `2px solid ${c}` : `1px solid ${T.border}`, display: "flex", flexDirection: "column", height: "100%", transformOrigin: "bottom" }} onClick={onClick}>
+  return <div className="glass" style={{ padding: 24, borderRadius: T.radius, cursor: onClick ? "pointer" : "default", border: active ? `2px solid ${c}` : undefined, display: "flex", flexDirection: "column", height: "100%" }} onClick={onClick}>
     <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 20 }}>
       <div>
         <div style={{ fontSize: 13, fontWeight: 700, color: T.textSub, marginBottom: 8, letterSpacing: "0.05em", textTransform: "uppercase" }}>{label}</div>
@@ -107,6 +108,7 @@ export function KCard({ label, value, sub, icon: Icon, color, delta, onClick, ac
   </div>;
 }
 
+// MOBILE LAYOUT FIX
 export function PeriodBar({ df, setDf, dt, setDt, preset, setPreset }) {
   const T = useT();
   const PRESETS = [
@@ -126,11 +128,11 @@ export function PeriodBar({ df, setDf, dt, setDt, preset, setPreset }) {
     }
   };
   return (
-    <div className="filter-wrap" style={{ background: T.surfaceGlass, padding: "4px 8px", borderRadius: T.radiusFull, border: `1px solid ${T.borderSubtle}` }}>
+    <div className="filter-wrap period-bar-wrap" style={{ background: T.surfaceGlass, padding: "4px 8px", borderRadius: T.radius, border: `1px solid ${T.borderSubtle}` }}>
       <select value={preset || ""} onChange={e => applyPreset(e.target.value)} className="sel" style={{ width: 140, fontWeight: 600, border: "none", background: "transparent", boxShadow: "none" }}>
         {PRESETS.map(p => <option key={p.k} value={p.k}>{p.l}</option>)}
       </select>
-      <div style={{ width: 1, height: 20, background: T.borderSubtle }} />
+      <div className="hide-mob" style={{ width: 1, height: 20, background: T.borderSubtle }} />
       <input type="date" className="inp" value={df || ""} onChange={e => { setDf(e.target.value); setPreset("custom"); }} style={{ width: 140, border: "none", background: "transparent", boxShadow: "none" }} />
       <span style={{ color: T.textMuted, fontWeight: 700 }}>→</span>
       <input type="date" className="inp" value={dt || ""} onChange={e => { setDt(e.target.value); setPreset("custom"); }} style={{ width: 140, border: "none", background: "transparent", boxShadow: "none" }} />
@@ -199,7 +201,7 @@ export function Pager({ total, page, ps, setPage, setPs }) {
     <div style={{ display: "flex", gap: 8 }}>
       <button onClick={() => setPage(1)} disabled={page <= 1} style={nb(page <= 1)}>«</button>
       <button onClick={() => setPage(p => Math.max(1, p - 1))} disabled={page <= 1} style={nb(page <= 1)}>‹</button>
-      {range.map(p => <button key={p} onClick={() => setPage(p)} style={{ padding: "8px 16px", minWidth: 36, borderRadius: T.radius, border: p === page ? `1px solid ${T.accent}` : `1px solid ${T.border}`, cursor: "pointer", fontWeight: 700, fontSize: 13, background: p === page ? T.accent : T.surfaceGlass, color: p === page ? "#fff" : T.textSub, transition: "all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1)", transform: p === page ? "scale(1.05)" : "scale(1)", boxShadow: p === page ? `0 4px 12px ${T.accent}40` : "none" }}>{p}</button>)}
+      {range.map(p => <button key={p} onClick={() => setPage(p)} style={{ padding: "8px 16px", minWidth: 36, borderRadius: T.radius, border: p === page ? `1px solid ${T.accent}` : `1px solid ${T.border}`, cursor: "pointer", fontWeight: 700, fontSize: 13, background: p === page ? T.accent : T.surfaceGlass, color: p === page ? "#fff" : T.textSub, transition: "all 0.2s ease" }}>{p}</button>)}
       <button onClick={() => setPage(p => Math.min(tp, p + 1))} disabled={page >= tp} style={nb(page >= tp)}>›</button>
       <button onClick={() => setPage(tp)} disabled={page >= tp} style={nb(page >= tp)}>»</button>
     </div>
