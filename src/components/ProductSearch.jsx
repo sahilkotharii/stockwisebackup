@@ -1,4 +1,5 @@
 import React, { useState, useMemo, useRef, useEffect, useCallback } from "react";
+import { createPortal } from "react-dom";
 import { Search, X } from "lucide-react";
 import { useT } from "../theme";
 
@@ -38,11 +39,18 @@ export default function ProductSearch({ value, onChange, products, placeholder, 
         setSearch("");
       }
     };
+    const scrollHandler = (e) => {
+      // Close dropdown if user scrolls the modal behind it
+      if (e.target.closest('.ps-dropdown')) return;
+      setIsOpen(false);
+    };
     document.addEventListener("mousedown", handler);
     document.addEventListener("touchstart", handler);
+    window.addEventListener("scroll", scrollHandler, true);
     return () => {
       document.removeEventListener("mousedown", handler);
       document.removeEventListener("touchstart", handler);
+      window.removeEventListener("scroll", scrollHandler, true);
     };
   }, []);
 
@@ -88,11 +96,12 @@ export default function ProductSearch({ value, onChange, products, placeholder, 
           </button>
         )}
       </div>
-      {isOpen && (
-        <div className="spring-in glass-strong" style={{
-          position: "fixed", top: pos.top, left: pos.left, width: pos.width, zIndex: 999999, // Super high z-index to break out of all modals
+      {isOpen && createPortal(
+        <div className="spring-in glass-strong ps-dropdown" style={{
+          position: "fixed", top: pos.top, left: pos.left, width: pos.width, zIndex: 999999,
           borderRadius: T.radius, maxHeight: 320, overflowY: "auto",
-          WebkitOverflowScrolling: "touch", padding: 6
+          WebkitOverflowScrolling: "touch", padding: 6,
+          background: T.surfaceStrong, border: `1px solid ${T.accent}40`, boxShadow: T.shadowXl
         }}>
           {filtered.length === 0
             ? <div style={{ padding: "16px", fontSize: 13, color: T.textMuted, textAlign: "center", fontWeight: 500 }}>No products found</div>
@@ -119,7 +128,8 @@ export default function ProductSearch({ value, onChange, products, placeholder, 
               </div>
             ))
           }
-        </div>
+        </div>,
+        document.body
       )}
     </div>
   );
