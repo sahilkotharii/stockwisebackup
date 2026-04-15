@@ -1,6 +1,5 @@
 // ╔═══════════════════════════════════════════════════════════════════╗
 // ║  useAppState — All data, save functions, sync, and stock calc   ║
-// ║  This is the single source of truth for the entire app's state  ║
 // ╚═══════════════════════════════════════════════════════════════════╝
 
 import { useState, useEffect, useCallback } from "react";
@@ -33,9 +32,7 @@ export default function useAppState() {
   const [changeReqs, setChangeReqs] = useState([]);
   const [actLog, setActLog] = useState([]);
   const [invoiceSettings, setInvoiceSettings] = useState({});
-  
-  // New State for Phase 1: Product Aliases
-  const [aliases, setAliases] = useState([]); 
+  const [aliases, setAliases] = useState([]);
 
   const [sheetsUrl, setSheetsUrl] = useState(DEFAULT_SHEETS_URL);
   const [syncSt, setSyncSt] = useState("idle");
@@ -114,6 +111,13 @@ export default function useAppState() {
           if (cfg.productAliases) { setAliases(cfg.productAliases); lsSet("sw_aliases", cfg.productAliases); }
         }
       }
+      if (data.actLog?.length) {
+        const localLog = await lsGet(SK.actLog, []);
+        const sheetsIds = new Set(data.actLog.map(e => e.id));
+        const localOnly = localLog.filter(e => !sheetsIds.has(e.id));
+        const merged = [...data.actLog, ...localOnly].sort((a, b) => new Date(b.ts) - new Date(a.ts)).slice(0, 500);
+        setActLog(merged); lsSet(SK.actLog, merged);
+      }
       setSyncSt("success");
       setLastSync(new Date().toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit" }));
       setTimeout(() => setSyncSt("idle"), 3000);
@@ -128,10 +132,10 @@ export default function useAppState() {
 
     (async () => {
       try {
-        const [u, p, c, v, t, b, sUrl, dp, cr, tid, ak, cc, bgi, cs, lu, invS, sess, storedAliases] = await Promise.all([
+        const [u, p, c, v, t, b, sUrl, dp, cr, al, tid, ak, cc, bgi, cs, lu, invS, sess, storedAliases] = await Promise.all([
           lsGet(SK.users, null), lsGet(SK.products, null), lsGet(SK.categories, null),
           lsGet(SK.vendors, null), lsGet(SK.transactions, null), lsGet(SK.bills, []),
-          lsGet(SK.sheetsUrl, DEFAULT_SHEETS_URL), lsGet(SK.theme, false), lsGet(SK.changeReqs, []),
+          lsGet(SK.sheetsUrl, DEFAULT_SHEETS_URL), lsGet(SK.theme, false), lsGet(SK.changeReqs, []), lsGet(SK.actLog, []),
           lsGet("sw_theme_id", "glass"), lsGet("sw_accent_key", "copper"),
           lsGet("sw_custom_color", ""), lsGet("sw_bg_image", ""),
           lsGet("sw_corner_style", "rounded"), lsGet("sw_logo_url", ""),
@@ -152,9 +156,7 @@ export default function useAppState() {
         setThemeId(tid || "glass"); setAccentKey(ak || "copper");
         setCustomColorState(cc || ""); setBgImageState(bgi || "");
         setCornerStyleState(cs || "rounded"); setLogoUrlState(lu || "");
-        setChangeReqs(cr || []); setInvoiceSettings(invS || {});
-        
-        // Load Default Aliases
+        setChangeReqs(cr || []); setActLog(al || []); setInvoiceSettings(invS || {});
         setAliases(storedAliases);
 
         if (sess?.userId && sess?.ts && (Date.now() - sess.ts) < 86400000) {
@@ -186,7 +188,9 @@ export default function useAppState() {
   const saveTransactions = async t => { setTransactions(t); await lsSet(SK.transactions, t); debouncedPush("transactions", t); };
   const saveUsers = async u => { setUsers(u); await lsSet(SK.users, u); push("users", u); };
   const saveBills = async b => { setBills(b); await lsSet(SK.bills, b); debouncedPush("bills", b); };
-  
+  const saveChangeReqs = async r => { setChangeReqs(r); await lsSet(SK.changeReqs, r); push("changeReqs", r); };
+  const saveActLog = async l => { setActLog(l); await lsSet(SK.actLog, l); push("actLog", l); };
+
   const saveAliases = async a => { 
     setAliases(a); 
     await lsSet("sw_aliases", a); 
@@ -204,14 +208,38 @@ export default function useAppState() {
     push("appConfig", rows);
   };
 
+  // RESTORED: These functions were missing which broke the Approvals page
+  const addChangeReq = useCallback(async req => {
+    if (!user) return;
+    const r = { id: uid(), ts: new Date().toISOString(), requestedBy: user.id, requestedByName: user.name, ...req, status: "pending" };
+    const updated = [r, ...changeReqs];
+    setChangeReqs(updated); await lsSet(SK.changeReqs, updated); push("changeReqs", updated);
+    showToast("Change request sent to admin for approval", "success");
+  }, [user, changeReqs]);
+
+  const addLog = useCallback(async (action, entity, entityName, details = "") => {
+    if (!user) return;
+    const entry = { id: uid(), ts: new Date().toISOString(), userId: user.id, userName: user.name, role: user.role, action, entity, entityName, details };
+    const updated = [entry, ...actLog].slice(0, 500);
+    setActLog(updated); await lsSet(SK.actLog, updated);
+    if (updated.length % 10 === 0) push("actLog", updated);
+  }, [user, actLog]);
+
   const toggleTheme = () => { const n = !isDark; setIsDark(n); lsSet(SK.theme, n); };
   const setTheme = tid => { setThemeId(tid); lsSet("sw_theme_id", tid); };
   const setAccent = ak => { setAccentKey(ak); lsSet("sw_accent_key", ak); };
+  const setCustomColor = c => { setCustomColorState(c); lsSet("sw_custom_color", c); };
   const setBgImage = url => { setBgImageState(url); lsSet("sw_bg_image", url); };
+  const setCornerStyle = cs => { setCornerStyleState(cs); lsSet("sw_corner_style", cs); };
+  const setLogoUrl = url => { setLogoUrlState(url); lsSet("sw_logo_url", url); };
 
   const handleLogin = async u => {
     setUser(u);
     await lsSet(SK.session, { userId: u.id, ts: Date.now() });
+    const entry = { id: uid(), ts: new Date().toISOString(), userId: u.id, userName: u.name, role: u.role, action: "login", entity: "session", entityName: u.name, details: "" };
+    const updated = [entry, ...actLog].slice(0, 500);
+    setActLog(updated);
+    await lsSet(SK.actLog, updated);
   };
 
   const handleLogout = async () => { setUser(null); await lsSet(SK.session, null); };
@@ -223,10 +251,13 @@ export default function useAppState() {
       user, products, categories, vendors, transactions, users, bills, aliases,
       getStock, saveProducts, saveCategories, saveVendors, saveTransactions,
       saveUsers, saveBills, saveAliases, invoiceSettings, saveInvoiceSettings,
-      themeId, setTheme, accentKey, setAccent, bgImage, setBgImage, logoUrl,
+      changeReqs, saveChangeReqs, addChangeReq, // Restored!
+      actLog, saveActLog, addLog, // Restored!
+      themeId, setTheme, accentKey, setAccent, customColor, setCustomColor, 
+      bgImage, setBgImage, cornerStyle, setCornerStyle, logoUrl, setLogoUrl,
       settingsTab, setSettingsTab, isDark, toggleTheme,
     },
-    isDark, themeId, accentKey, bgImage, logoUrl, toggleTheme,
+    isDark, themeId, accentKey, customColor, bgImage, cornerStyle, logoUrl, toggleTheme,
     sheetsUrl, setSheetsUrl, syncSt, lastSync, testStatus, onTest, pull: () => pull(sheetsUrl),
     handleLogin, handleLogout,
   };
