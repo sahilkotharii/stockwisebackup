@@ -20,17 +20,27 @@ const LOCKABLE = [
 
 export default function Settings({ ctx, sheetsUrl, setSheetsUrl, testStatus, onTest }) {
   const T = useT();
-  const { users, saveUsers, user, actLog, saveActLog, invoiceSettings, saveInvoiceSettings, themeId, setTheme, accentKey, setAccent, customColor, setCustomColor, bgImage, setBgImage, cornerStyle, setCornerStyle, logoUrl, setLogoUrl, THEMES, ACCENT_PRESETS, CORNER_STYLES, changeReqs, saveChangeReqs, settingsTab } = ctx;
+  const { 
+    users, saveUsers, user, actLog, saveActLog, invoiceSettings, saveInvoiceSettings, 
+    themeId, setTheme, accentKey, setAccent, customColor, setCustomColor, bgImage, 
+    setBgImage, cornerStyle, setCornerStyle, logoUrl, setLogoUrl, THEMES, ACCENT_PRESETS, 
+    CORNER_STYLES, changeReqs, saveChangeReqs, settingsTab,
+    aliases, saveAliases // Phase 1: Added Alias State
+  } = ctx;
+  
   const isDark = ctx.isDark;
   const isManager = user.role === "manager";
   const isAdmin = user.role === "admin";
   const ROLE_LABELS = { admin:"Admin", manager:"Manager", sales:"Sales Person", purchase:"Purchase Person", accountant:"Accountant", production:"Production" };
+  
+  // STRICT TAB SECURITY: Non-admins ONLY see profile, theme, export, and howto
   const tabs = isAdmin
-    ? ["profile", "theme", "users", "series", "access", "export", "activity", "sessions", "invoice", "sheets", "howto"]
+    ? ["profile", "theme", "aliases", "users", "series", "access", "export", "activity", "sessions", "invoice", "sheets", "howto"]
     : ["profile", "theme", "export", "howto"];
+    
   const [tab, setTab] = useState(ctx?.settingsTab || "profile");
-  // Sync with ctx settingsTab when it changes
-  React.useEffect(() => { if (ctx?.settingsTab) setTab(ctx.settingsTab); }, [ctx?.settingsTab]);
+  
+  React.useEffect(() => { if (ctx?.settingsTab && tabs.includes(ctx.settingsTab)) setTab(ctx.settingsTab); }, [ctx?.settingsTab]);
   const [localUrl, setLocalUrl] = useState(sheetsUrl || "");
 
   const [uModal, setUModal] = useState(false);
@@ -39,8 +49,8 @@ export default function Settings({ ctx, sheetsUrl, setSheetsUrl, testStatus, onT
   const uf = (k, v) => setUForm(p => ({ ...p, [k]: v }));
 
   const [invForm, setInvForm] = useState(invoiceSettings || {});
-
   const [pForm, setPForm] = useState({ name: user.name, newPass: "", confirmPass: "" });
+  const [newAlias, setNewAlias] = useState(""); // Phase 1: New Alias Input
 
   // ── Activity + Login History filters ──────────────────────────────────────
   const [logDf, setLogDf] = useState("");
@@ -55,7 +65,7 @@ export default function Settings({ ctx, sheetsUrl, setSheetsUrl, testStatus, onT
     if (pForm.newPass && pForm.newPass !== pForm.confirmPass) { alert("Passwords don't match."); return; }
     if (pForm.newPass && pForm.newPass.length < 6) { alert("Password must be at least 6 characters."); return; }
     if (pForm.username !== undefined && pForm.username.length < 3) { alert("Username must be at least 3 characters."); return; }
-    // Check username uniqueness if changed
+    
     if (pForm.username && pForm.username !== user.username) {
       const taken = users.find(u => u.username === pForm.username && u.id !== user.id);
       if (taken) { alert("Username already taken."); return; }
@@ -76,7 +86,6 @@ export default function Settings({ ctx, sheetsUrl, setSheetsUrl, testStatus, onT
     if (exists) { alert("Username already taken."); return; }
     let finalForm = { ...uForm };
     if (!uForm.password && eu) {
-      // No new password entered — keep existing
       const existing = users.find(u => u.id === eu);
       finalForm.password = existing?.password || "";
     }
@@ -85,7 +94,6 @@ export default function Settings({ ctx, sheetsUrl, setSheetsUrl, testStatus, onT
     setUModal(false);
   };
 
-
   const toggleLock = (uid2, pid) => {
     const u = users.find(x => x.id === uid2);
     if (!u) return;
@@ -93,7 +101,25 @@ export default function Settings({ ctx, sheetsUrl, setSheetsUrl, testStatus, onT
     saveUsers(users.map(x => x.id === uid2 ? { ...x, lockedPages: lk.includes(pid) ? lk.filter(p => p !== pid) : [...lk, pid] } : x));
   };
 
-  const tlbls = { profile: "Profile", theme: "Theme", users: "Users", series: "Bill Series", access: "Access Control", export: "Export", activity: "Activity Log", sessions: "Login History", invoice: "Invoice", sheets: "Google Sheets", howto: "How to Use" };
+  // Phase 1: Alias Handlers
+  const handleAddAlias = () => {
+    const trimmed = newAlias.trim();
+    if (!trimmed) return;
+    if ((aliases || []).some(a => a.toLowerCase() === trimmed.toLowerCase())) {
+      alert("This category already exists.");
+      return;
+    }
+    saveAliases([...(aliases || []), trimmed]);
+    setNewAlias("");
+  };
+
+  const handleRemoveAlias = (aliasToRemove) => {
+    if (window.confirm(`Remove category "${aliasToRemove}"?`)) {
+      saveAliases((aliases || []).filter(a => a !== aliasToRemove));
+    }
+  };
+
+  const tlbls = { profile: "Profile", theme: "Theme", aliases: "Product Aliases", users: "Users", series: "Bill Series", access: "Access Control", export: "Export", activity: "Activity Log", sessions: "Login History", invoice: "Invoice", sheets: "Google Sheets", howto: "How to Use" };
   const myLog = isAdmin ? actLog : actLog.filter(l => l.userId === user.id);
 
   return <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
@@ -122,6 +148,29 @@ export default function Settings({ ctx, sheetsUrl, setSheetsUrl, testStatus, onT
             </button>
           ))}
         </div>
+      </div>
+    </div>}
+
+    {/* PHASE 1: PRODUCT ALIASES MANAGER */}
+    {tab === "aliases" && isAdmin && <div className="glass" style={{ padding: 20, borderRadius: T.radius }}>
+      <div style={{ fontFamily: T.displayFont, fontWeight: 700, fontSize: 15, color: T.text, marginBottom: 4 }}>Product Aliases & Categories</div>
+      <div style={{ fontSize: 12, color: T.textMuted, marginBottom: 16 }}>Create dropdown options (e.g., Finished Goods, Packaging, Raw Parts) so your team can easily categorize and filter products.</div>
+      
+      <div style={{ display: "flex", gap: 10, marginBottom: 20 }}>
+        <div style={{ flex: 1 }}>
+          <GIn value={newAlias} onChange={e => setNewAlias(e.target.value)} placeholder="e.g. Copper Caps" onKeyDown={e => e.key === "Enter" && handleAddAlias()} />
+        </div>
+        <GBtn onClick={handleAddAlias} icon={<Plus size={14}/>}>Add Category</GBtn>
+      </div>
+
+      <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+        {(aliases || []).map((alias, idx) => (
+          <div key={idx} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "10px 14px", borderRadius: T.radius, background: T.isDark ? "rgba(255,255,255,0.04)" : "rgba(0,0,0,0.02)", border: `1px solid ${T.borderSubtle}` }}>
+            <div style={{ fontSize: 13, fontWeight: 600, color: T.text }}>{alias}</div>
+            <button className="btn-danger" style={{ padding: "5px 8px" }} onClick={() => handleRemoveAlias(alias)}><Trash2 size={13} /></button>
+          </div>
+        ))}
+        {(aliases || []).length === 0 && <div style={{ fontSize: 12, color: T.textMuted, textAlign: "center", padding: "20px 0" }}>No custom categories created yet.</div>}
       </div>
     </div>}
 
@@ -235,11 +284,10 @@ export default function Settings({ ctx, sheetsUrl, setSheetsUrl, testStatus, onT
     </div>}
 
     {tab === "export" && (() => {
-      // Manager export restriction: only show CSVs for pages they can access
-      const allowed = ROLE_PAGES[user.role] || null; // null = admin (all)
+      const allowed = ROLE_PAGES[user.role] || null; 
       const locked = user.lockedPages || [];
       const canAccess = pageId => {
-        if (!allowed) return true; // admin
+        if (!allowed) return true; 
         return allowed.includes(pageId) && !locked.includes(pageId);
       };
 
@@ -306,7 +354,6 @@ export default function Settings({ ctx, sheetsUrl, setSheetsUrl, testStatus, onT
         { l: "Change Requests", page: "approvals", fn: () => dlCSV(toCSV((ctx.changeReqs||[]).map(r => ({ ts:r.ts, requestedBy:r.requestedByName, entity:r.entity, action:r.action, itemName:r.entityName, status:r.status, reviewedBy:r.reviewedByName||"" })), ["ts","requestedBy","entity","action","itemName","status","reviewedBy"]), "change_requests") },
       ];
 
-      // Filter by access for non-admin
       const visibleExports = ALL_EXPORTS.filter(exp => exp.page === null || canAccess(exp.page));
 
       return <div className="glass" style={{ padding: 20, borderRadius: T.radius }}>
@@ -321,7 +368,7 @@ export default function Settings({ ctx, sheetsUrl, setSheetsUrl, testStatus, onT
       </div>;
     })()}
 
-    {tab === "activity" && (() => {
+    {tab === "activity" && isAdmin && (() => {
       const filtered = myLog.filter(l => {
         if (logUser && !l.userName?.toLowerCase().includes(logUser.toLowerCase())) return false;
         if (logDf && l.ts?.slice(0,10) < logDf) return false;
