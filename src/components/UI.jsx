@@ -1,6 +1,6 @@
 import React, { useEffect } from "react";
 import { useT } from "../theme";
-import { X, ChevronDown } from "lucide-react";
+import { X, ChevronDown, ArrowUpRight, ArrowDownRight } from "lucide-react";
 
 export function GCard({ c, style, cl = "", onClick }) {
   const T = useT();
@@ -12,7 +12,7 @@ export function Pill({ c, color }) {
 }
 
 export function GBtn({ c, children, onClick, v = "copper", sz = "md", dis, icon, style = {}, type = "button", form }) {
-  const s = { sm: { padding: "8px 12px", fontSize: 12 }, md: { padding: "10px 16px", fontSize: 13 }, lg: { padding: "12px 24px", fontSize: 14 } }[sz];
+  const s = { sm: { padding: "8px 14px", fontSize: 12 }, md: { padding: "10px 18px", fontSize: 13 }, lg: { padding: "12px 24px", fontSize: 14 } }[sz];
   return <button type={type} form={form} onClick={onClick} disabled={dis} className={`btn-${v}`} style={{ ...s, opacity: dis ? .5 : 1, cursor: dis ? "not-allowed" : "pointer", ...style }}>{icon}{c || children}</button>;
 }
 
@@ -71,8 +71,8 @@ export function Modal({ open, onClose, title, children, footer, width = 560 }) {
   return (
     <div onClick={onClose} className="modal-overlay" style={{ position: "fixed", inset: 0, zIndex: 200, display: "flex", alignItems: "center", justifyContent: "center", padding: 16 }}>
       <div className="glass-strong spring-in" onClick={e => e.stopPropagation()} style={{ width: "100%", maxWidth: width, borderRadius: T.radius, maxHeight: "90vh", display: "flex", flexDirection: "column", overflow: "hidden" }}>
-        <div style={{ padding: "16px 24px", borderBottom: `1px solid ${T.border}`, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-          <div style={{ fontWeight: 600, fontSize: 16 }}>{title}</div>
+        <div style={{ padding: "16px 24px", borderBottom: `1px solid ${T.border}`, display: "flex", justifyContent: "space-between", alignItems: "center", background: T.surfaceStrong }}>
+          <div style={{ fontWeight: 700, fontSize: 16, color: T.text }}>{title}</div>
           <button onClick={onClose} className="btn-ghost" style={{ padding: 6, borderRadius: "50%" }}><X size={16} /></button>
         </div>
         <div style={{ padding: 24, overflowY: "auto" }}>{children}</div>
@@ -82,24 +82,28 @@ export function Modal({ open, onClose, title, children, footer, width = 560 }) {
   );
 }
 
-// Redesigned clean, modern KCard (KPI Card)
+// Highly refined, sleek KPI Card
 export function KCard({ label, value, sub, icon: Icon, color, delta, onClick, active }) {
   const T = useT();
   const c = color || T.accent;
   
-  return <div className="glass" style={{ padding: 20, borderRadius: T.radius, cursor: onClick ? "pointer" : "default", border: active ? `2px solid ${c}` : undefined, display: "flex", flexDirection: "column" }} onClick={onClick}>
-    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 16 }}>
+  return <div className="glass" style={{ padding: 24, borderRadius: T.radius, cursor: onClick ? "pointer" : "default", border: active ? `2px solid ${c}` : `1px solid ${T.border}`, display: "flex", flexDirection: "column", height: "100%" }} onClick={onClick}>
+    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 20 }}>
       <div>
-        <div style={{ fontSize: 13, fontWeight: 600, color: T.textSub, marginBottom: 4 }}>{label}</div>
-        <div style={{ fontSize: 26, fontWeight: 700, color: T.text, letterSpacing: "-0.02em" }}>{value}</div>
+        <div style={{ fontSize: 13, fontWeight: 600, color: T.textSub, marginBottom: 8, letterSpacing: "0.02em" }}>{label}</div>
+        <div style={{ fontSize: 28, fontWeight: 700, color: T.text, letterSpacing: "-0.03em" }}>{value}</div>
       </div>
-      <div style={{ width: 40, height: 40, borderRadius: T.radius, background: `${c}15`, display: "flex", alignItems: "center", justifyContent: "center", color: c }}>
-        <Icon size={20} />
+      <div style={{ width: 44, height: 44, borderRadius: T.radius, background: `${c}12`, display: "flex", alignItems: "center", justifyContent: "center", color: c }}>
+        <Icon size={22} strokeWidth={2.5} />
       </div>
     </div>
     <div style={{ display: "flex", alignItems: "center", gap: 8, marginTop: "auto" }}>
-      {delta !== undefined && <span style={{ fontSize: 12, fontWeight: 600, color: delta >= 0 ? T.green : T.red, display: "flex", alignItems: "center" }}>{delta >= 0 ? "↑" : "↓"} {Math.abs(delta).toFixed(1)}%</span>}
-      {sub && <span style={{ fontSize: 12, color: T.textMuted }}>{sub}</span>}
+      {delta !== undefined && (
+        <span style={{ fontSize: 12, fontWeight: 600, color: delta >= 0 ? T.green : T.red, display: "flex", alignItems: "center", gap: 2, background: delta >= 0 ? T.greenBg : T.redBg, padding: "2px 8px", borderRadius: T.radiusFull }}>
+          {delta >= 0 ? <ArrowUpRight size={14}/> : <ArrowDownRight size={14}/>} {Math.abs(delta).toFixed(1)}%
+        </span>
+      )}
+      {sub && <span style={{ fontSize: 12, color: T.textMuted, fontWeight: 500 }}>{sub}</span>}
     </div>
   </div>;
 }
@@ -124,7 +128,7 @@ export function PeriodBar({ df, setDf, dt, setDt, preset, setPreset, noFY = fals
   };
   return (
     <div className="filter-wrap">
-      <select value={preset || ""} onChange={e => applyPreset(e.target.value)} className="sel" style={{ width: 140, fontWeight: 500 }}>
+      <select value={preset || ""} onChange={e => applyPreset(e.target.value)} className="sel" style={{ width: 140, fontWeight: 600 }}>
         {PRESETS.map(p => <option key={p.k} value={p.k}>{p.l}</option>)}
       </select>
       <input type="date" className="inp" value={df || ""} onChange={e => { setDf(e.target.value); setPreset("custom"); }} style={{ width: 140 }} />
@@ -138,10 +142,10 @@ export function SearchInput({ value, onChange, placeholder = "Search…", style 
   const T = useT();
   return (
     <div style={{ position: "relative", ...style }}>
-      <svg style={{ position: "absolute", left: 12, top: "50%", transform: "translateY(-50%)", width: 14, height: 14, fill: "none", stroke: T.textMuted, strokeWidth: 2 }} viewBox="0 0 24 24">
+      <svg style={{ position: "absolute", left: 14, top: "50%", transform: "translateY(-50%)", width: 16, height: 16, fill: "none", stroke: T.textMuted, strokeWidth: 2 }} viewBox="0 0 24 24">
         <circle cx="11" cy="11" r="8" /><line x1="21" y1="21" x2="16.65" y2="16.65" />
       </svg>
-      <input className="inp" value={value} onChange={onChange} placeholder={placeholder} style={{ paddingLeft: 34 }} />
+      <input className="inp" value={value} onChange={onChange} placeholder={placeholder} style={{ paddingLeft: 38 }} />
     </div>
   );
 }
@@ -158,7 +162,7 @@ export function DeleteConfirmModal({ open, onClose, onConfirm, user, label = "th
   };
   return (
     <Modal open={true} onClose={onClose} title="Confirm Deletion" width={400}>
-      <div style={{ fontSize: 14, color: T.textSub, marginBottom: 16 }}>Are you sure you want to delete <strong>{label}</strong>? {extra} <br/><br/><span style={{ color: T.red, fontWeight: 500 }}>This action cannot be undone.</span></div>
+      <div style={{ fontSize: 14, color: T.textSub, marginBottom: 16 }}>Are you sure you want to delete <strong>{label}</strong>? {extra} <br/><br/><span style={{ color: T.red, fontWeight: 600 }}>This action cannot be undone.</span></div>
       <Field label="Enter password to confirm" req>
         <GIn type="password" value={pass} onChange={e=>{setPass(e.target.value);setErr("");}} autoFocus onKeyDown={e=>e.key==="Enter"&&go()} />
       </Field>
@@ -186,18 +190,18 @@ export function Pager({ total, page, ps, setPage, setPs }) {
   if (total <= 0) return null;
   let s = Math.max(1, page - 2), e = Math.min(tp, s + 4);
   if (e - s < 4) s = Math.max(1, e - 4);
-  const nb = dis => ({ padding: "6px 10px", minWidth: 32, borderRadius: T.radius, border: `1px solid ${T.border}`, cursor: dis ? "not-allowed" : "pointer", fontWeight: 500, fontSize: 13, background: "transparent", color: dis ? T.textMuted : T.textSub, opacity: dis ? .5 : 1 });
+  const nb = dis => ({ padding: "6px 12px", minWidth: 34, borderRadius: T.radius, border: `1px solid ${T.border}`, cursor: dis ? "not-allowed" : "pointer", fontWeight: 600, fontSize: 13, background: "transparent", color: dis ? T.textMuted : T.textSub, opacity: dis ? .5 : 1 });
   const range = [];
   for (let i = s; i <= e; i++) range.push(i);
   return <div style={{ display: "flex", alignItems: "center", gap: 12, padding: "16px 20px", borderTop: `1px solid ${T.border}`, flexWrap: "wrap", background: T.surface, borderRadius: `0 0 ${T.radius} ${T.radius}` }}>
-    <span style={{ fontSize: 13, color: T.textMuted, flex: 1, minWidth: 100 }}>Showing {Math.min((page - 1) * ps + 1, total)} to {Math.min(page * ps, total)} of <span style={{ fontWeight: 600, color: T.text }}>{total}</span> results</span>
-    <select className="sel" value={ps} onChange={e => { setPs(Number(e.target.value)); setPage(1); }} style={{ width: "auto", padding: "6px 30px 6px 12px", fontSize: 13 }}>
+    <span style={{ fontSize: 13, color: T.textMuted, flex: 1, minWidth: 100 }}>Showing {Math.min((page - 1) * ps + 1, total)} to {Math.min(page * ps, total)} of <span style={{ fontWeight: 700, color: T.text }}>{total}</span> results</span>
+    <select className="sel" value={ps} onChange={e => { setPs(Number(e.target.value)); setPage(1); }} style={{ width: "auto", padding: "8px 30px 8px 12px", fontSize: 13, fontWeight: 600 }}>
       {[20, 50, 100].map(n => <option key={n} value={n}>{n} / page</option>)}
     </select>
     <div style={{ display: "flex", gap: 6 }}>
       <button onClick={() => setPage(1)} disabled={page <= 1} style={nb(page <= 1)}>«</button>
       <button onClick={() => setPage(p => Math.max(1, p - 1))} disabled={page <= 1} style={nb(page <= 1)}>‹</button>
-      {range.map(p => <button key={p} onClick={() => setPage(p)} style={{ padding: "6px 12px", minWidth: 32, borderRadius: T.radius, border: `1px solid ${p === page ? T.accent : T.border}`, cursor: "pointer", fontWeight: 600, fontSize: 13, background: p === page ? T.accent : "transparent", color: p === page ? "#fff" : T.textSub }}>{p}</button>)}
+      {range.map(p => <button key={p} onClick={() => setPage(p)} style={{ padding: "6px 14px", minWidth: 34, borderRadius: T.radius, border: p === page ? `1px solid ${T.accent}` : `1px solid ${T.border}`, cursor: "pointer", fontWeight: 600, fontSize: 13, background: p === page ? T.accent : "transparent", color: p === page ? "#fff" : T.textSub, transition: "all 0.2s" }}>{p}</button>)}
       <button onClick={() => setPage(p => Math.min(tp, p + 1))} disabled={page >= tp} style={nb(page >= tp)}>›</button>
       <button onClick={() => setPage(tp)} disabled={page >= tp} style={nb(page >= tp)}>»</button>
     </div>
