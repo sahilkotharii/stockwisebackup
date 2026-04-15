@@ -1,7 +1,7 @@
 import React, { useState, useMemo, useEffect } from "react";
 import { Plus, X, Eye, Trash2, Edit2, ShoppingCart, Box, Package } from "lucide-react";
 import { useT } from "../theme";
-import { KCard, GBtn, DeleteConfirmModal, GS, Modal, Pager, PeriodBar, SearchInput } from "../components/UI";
+import { KCard, GBtn, DeleteConfirmModal, GS, GIn, GTa, Field, Modal, Pager, PeriodBar, SearchInput } from "../components/UI"; // <-- FIXED IMPORTS
 import BillForm from "../components/BillForm";
 import { uid, fmtCur, fmtDate, inRange, today } from "../utils";
 
@@ -33,7 +33,6 @@ export default function Purchase({ ctx }) {
 
   const totalPurchaseInclGst = periodPurBills.reduce((s, b) => s + Number(b.total || 0), 0);
   const totalPurchaseExclGst = periodPurBills.reduce((s, b) => s + Number(b.subtotal || 0), 0);
-  const totalOrders = periodPurBills.length;
   const totalUnits = periodPurBills.reduce((s, b) => s + (b.items || []).reduce((si, i) => si + Number(i.qty || 0), 0), 0);
 
   const purBills = useMemo(() => periodPurBills.filter(b => {
@@ -52,7 +51,7 @@ export default function Purchase({ ctx }) {
     const newTxns = bill.items.map(item => ({
       id: uid(), productId: item.productId, type: item.isDamaged ? "damaged" : "purchase",
       qty: item.qty,
-      price: item.price,
+      price: item.price, 
       effectivePrice: item.price,
       gstRate: item.gstRate || 0,
       gstAmount: item.gstAmount || 0,
