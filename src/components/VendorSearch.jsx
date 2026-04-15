@@ -1,4 +1,5 @@
 import React, { useState, useMemo, useRef, useEffect, useCallback } from "react";
+import { createPortal } from "react-dom";
 import { Search, X } from "lucide-react";
 import { useT } from "../theme";
 
@@ -9,7 +10,6 @@ export default function VendorSearch({ value, onChange, vendors = [], placeholde
   const [isOpen, setIsOpen] = useState(false);
   const wrapRef = useRef(null);
   const inputRef = useRef(null);
-  const justOpened = useRef(false);
 
   const [pos, setPos] = useState({ top: 0, left: 0, width: 200 });
   const calcPos = useCallback(() => {
@@ -40,11 +40,17 @@ export default function VendorSearch({ value, onChange, vendors = [], placeholde
         setSearch("");
       }
     };
+    const scrollHandler = (e) => {
+      if (e.target.closest('.ps-dropdown')) return;
+      setIsOpen(false);
+    };
     document.addEventListener("mousedown", handler);
     document.addEventListener("touchstart", handler);
+    window.addEventListener("scroll", scrollHandler, true);
     return () => {
       document.removeEventListener("mousedown", handler);
       document.removeEventListener("touchstart", handler);
+      window.removeEventListener("scroll", scrollHandler, true);
     };
   }, []);
 
@@ -53,8 +59,6 @@ export default function VendorSearch({ value, onChange, vendors = [], placeholde
       setSearch("");
       calcPos();
       setIsOpen(true);
-      justOpened.current = true;
-      requestAnimationFrame(() => { justOpened.current = false; });
     }
   };
 
@@ -98,10 +102,11 @@ export default function VendorSearch({ value, onChange, vendors = [], placeholde
           </button>
         )}
       </div>
-      {isOpen && (
-        <div className="spring-in glass-strong" style={{
-          position: "fixed", top: pos.top, left: pos.left, width: pos.width, zIndex: 999999, // High z-index to escape modals
-          borderRadius: T.radius, maxHeight: 300, overflowY: "auto", padding: 6
+      {isOpen && createPortal(
+        <div className="spring-in glass-strong ps-dropdown" style={{
+          position: "fixed", top: pos.top, left: pos.left, width: pos.width, zIndex: 999999,
+          borderRadius: T.radius, maxHeight: 300, overflowY: "auto", padding: 6,
+          background: T.surfaceStrong, border: `1px solid ${T.accent}40`, boxShadow: T.shadowXl
         }}>
           {vendors.length === 0 && (
             <div style={{ padding: "16px", fontSize: 13, color: T.textMuted, textAlign: "center", fontWeight: 500 }}>No vendors/customers yet</div>
@@ -129,7 +134,8 @@ export default function VendorSearch({ value, onChange, vendors = [], placeholde
               </div>
             </div>
           ))}
-        </div>
+        </div>,
+        document.body
       )}
     </div>
   );
