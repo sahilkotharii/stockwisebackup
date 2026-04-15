@@ -1,7 +1,7 @@
 import React, { useState, useMemo, useRef, useEffect } from "react";
 import { Box, CheckCircle, AlertTriangle, AlertOctagon, Download, Search, Edit2, X, Plus, Layers, Upload, DollarSign } from "lucide-react";
 import { useT } from "../theme";
-import { KCard, GBtn, GS, GIn, Field, Modal, StChip, Pager } from "../components/UI";
+import { KCard, GBtn, GS, GIn, Field, Modal, StChip, Pager, SearchInput } from "../components/UI";
 import { fmtCur, toCSV, dlCSV, uid, today, calcMgn } from "../utils";
 
 export default function Inventory({ ctx }) {
@@ -148,14 +148,7 @@ export default function Inventory({ ctx }) {
 
   return <div style={{ display: "flex", flexDirection: "column", gap: 24 }}>
 
-    <div className="kgrid" style={{ gap: 20 }}>
-      <KCard label="Inventory Value" value={fmtCur(totalValue)} sub={`ex-GST · ${productStats.length} products`} icon={Box} color={T.accent} onClick={() => setStockF("all")} active={stockF==="all"} />
-      <KCard label="Healthy Stock" value={healthy.length.toString()} sub="Click to filter" icon={CheckCircle} color={T.green} onClick={() => setStockF(stockF==="healthy"?"all":"healthy")} active={stockF==="healthy"} />
-      <KCard label="Low Stock" value={low.length.toString()} sub="Click to filter" icon={AlertTriangle} color={T.amber} onClick={() => setStockF(stockF==="low"?"all":"low")} active={stockF==="low"} />
-      <KCard label="Out of Stock" value={oos.length.toString()} sub="Click to filter" icon={AlertOctagon} color={T.red} onClick={() => setStockF(stockF==="oos"?"all":"oos")} active={stockF==="oos"} />
-    </div>
-
-    <div className="glass spring-in liquid-trans" style={{ padding: 24, borderRadius: T.radius, background: `linear-gradient(135deg, ${T.accentBg}, ${T.accent}15)`, border: `1px solid ${T.accent}30`, display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 16 }}>
+    <div className="glass spring-in liquid-trans" style={{ padding: "24px 30px", borderRadius: T.radius, background: `linear-gradient(135deg, ${T.accentBg}, ${T.accent}15)`, border: `1px solid ${T.accent}30`, display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 16 }}>
       <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
         <div className="liquid-trans" style={{ width: 48, height: 48, borderRadius: T.radius, background: `linear-gradient(135deg,${T.accent},${T.accentDark})`, display: "flex", alignItems: "center", justifyContent: "center", boxShadow: `0 4px 16px ${T.accent}50`, flexShrink: 0 }}><DollarSign size={24} color="#fff" /></div>
         <div>
@@ -170,11 +163,18 @@ export default function Inventory({ ctx }) {
       </div>
     </div>
 
+    <div className="kgrid" style={{ gap: 20 }}>
+      <KCard label="All Products" value={productStats.length.toString()} sub="Total active SKUs" icon={Box} color={T.accent} onClick={() => setStockF("all")} active={stockF==="all"} />
+      <KCard label="Healthy Stock" value={healthy.length.toString()} sub="Above min stock alert" icon={CheckCircle} color={T.green} onClick={() => setStockF("healthy")} active={stockF==="healthy"} />
+      <KCard label="Low Stock" value={low.length.toString()} sub="Below min stock alert" icon={AlertTriangle} color={T.amber} onClick={() => setStockF("low")} active={stockF==="low"} />
+      <KCard label="Out of Stock" value={oos.length.toString()} sub="Zero or negative qty" icon={AlertOctagon} color={T.red} onClick={() => setStockF("oos")} active={stockF==="oos"} />
+    </div>
+
     <div className="glass fade-up" style={{ borderRadius: T.radius, overflow: "hidden" }}>
-      <div style={{ padding: 24, borderBottom: `1px solid ${T.borderSubtle}`, background: T.surfaceGlass }}>
+      <div style={{ padding: "20px 24px", borderBottom: `1px solid ${T.borderSubtle}`, background: T.surfaceGlass }}>
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 16, flexWrap: "wrap", gap: 12 }}>
           <div>
-            <div style={{ fontFamily: T.displayFont, fontWeight: 800, fontSize: 18, color: T.text }}>Stock Register</div>
+            <div style={{ fontFamily: T.displayFont, fontWeight: 800, fontSize: 18, color: T.text, letterSpacing: "-0.01em" }}>Stock Register</div>
             <div style={{ fontSize: 12, color: T.textMuted, marginTop: 4 }}>Inventory value calculated at ex-GST purchase price</div>
           </div>
           <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
@@ -186,6 +186,7 @@ export default function Inventory({ ctx }) {
             <GBtn v="ghost" sz="sm" onClick={() => dlCSV(toCSV(filtered.map(p => ({ name: p.name, sku: p.sku, opening: p.opening, purchased: p.purchased, sold: p.sold, salesReturned: p.salesReturned, purReturned: p.purReturned, damaged: p.damaged, stock: p.stock, value: p.value })), ["name","sku","opening","purchased","sold","salesReturned","purReturned","damaged","stock","value"]), "inventory")} icon={<Download size={14} />}>Export Register</GBtn>
           </div>
         </div>
+        
         <div className="filter-wrap" style={{ gap: 12 }}>
           <div style={{ position: "relative", flex: "1 1 200px" }}>
             <SearchInput value={search} onChange={e => setSearch(e.target.value)} placeholder="Search product…" />
@@ -200,41 +201,13 @@ export default function Inventory({ ctx }) {
             <option value="name">Sort: Name</option>
           </GS>
         </div>
-        
-        <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginTop: 12 }}>
-          {[
-            { k: "all",     l: "All",           color: T.accent,  count: productStats.length },
-            { k: "healthy", l: "Healthy",       color: T.green,   count: productStats.filter(p => p.stock > Number(p.minStock||0)).length },
-            { k: "low",     l: "Low Stock",     color: T.amber,   count: productStats.filter(p => p.stock > 0 && p.stock <= Number(p.minStock||0)).length },
-            { k: "oos",     l: "Out of Stock",  color: T.red,     count: productStats.filter(p => p.stock <= 0).length },
-            { k: "dead",    l: "Dead Stock",    color: "#7C3AED", count: productStats.filter(p => p.sold === 0 && p.stock > 0).length },
-          ].map(f => (
-            <button key={f.k} className="liquid-trans" onClick={() => setStockF(stockF === f.k && f.k !== "all" ? "all" : f.k)}
-              style={{
-                padding: "6px 14px", borderRadius: T.radiusFull, fontSize: 12, fontWeight: 600,
-                border: `1.5px solid ${stockF === f.k ? f.color : "transparent"}`,
-                cursor: "pointer",
-                background: stockF === f.k ? `${f.color}15` : T.isDark ? "rgba(255,255,255,0.05)" : "rgba(0,0,0,0.04)",
-                color: stockF === f.k ? f.color : T.textSub,
-                display: "flex", alignItems: "center", gap: 6,
-                boxShadow: stockF === f.k ? `0 2px 8px ${f.color}30` : "none"
-              }}>
-              {f.l}
-              <span style={{
-                background: stockF === f.k ? f.color : T.isDark ? "rgba(255,255,255,0.1)" : "rgba(0,0,0,0.06)",
-                color: stockF === f.k ? "#fff" : T.textMuted,
-                padding: "2px 8px", borderRadius: 99, fontSize: 11, fontWeight: 700, minWidth: 20, textAlign: "center"
-              }}>{f.count}</span>
-            </button>
-          ))}
-        </div>
       </div>
       <div style={{ overflowX: "auto", background: T.surfaceGlass }}>
         <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
           <thead>
             <tr style={{ background: T.isDark ? "rgba(255,255,255,0.02)" : "rgba(0,0,0,0.015)" }}>
-              {["Product", "SKU", "Category", "Opening", "+Purchased", "-Sold", "+Sale Ret", "-Pur Ret", "-Damaged", "= Stock", "Value (ex-GST)", "Status", isAdmin ? "Edit" : ""].filter(Boolean).map(h => (
-                <th key={h} className="th" style={{ textAlign: ["Opening", "+Purchased", "-Sold", "+Sale Ret", "-Pur Ret", "-Damaged", "= Stock", "Value (ex-GST)"].includes(h) ? "right" : "left" }}>
+              {["Product", "SKU", "Category", "Opening", "+Purchased", "-Sold", "+Sale Ret", "-Pur Ret", "-Damaged", "= Stock", "Value (ex-GST)", "Status", isAdmin ? "Edit" : ""].filter(Boolean).map((h, i) => (
+                <th key={i} className="th" style={{ textAlign: ["Opening", "+Purchased", "-Sold", "+Sale Ret", "-Pur Ret", "-Damaged", "= Stock", "Value (ex-GST)"].includes(h) ? "right" : "left", padding: "14px 16px" }}>
                   {h}
                 </th>
               ))}
@@ -245,25 +218,25 @@ export default function Inventory({ ctx }) {
               const cat = categories.find(c => c.id === p.categoryId);
               return (
                 <tr key={p.id} className="trow liquid-trans">
-                  <td className="td" style={{ maxWidth: 220 }}>
+                  <td className="td" style={{ maxWidth: 220, padding: "14px 16px" }}>
                     <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
                       {p.imageUrl && <img src={p.imageUrl} alt="" className="liquid-trans" style={{ width: 32, height: 32, borderRadius: T.radius, objectFit: "cover", flexShrink: 0, border: `1px solid ${T.border}` }} onError={e => e.target.style.display = "none"} />}
                       <div style={{ minWidth: 0 }}>
-                        <div style={{ fontWeight: 600, color: T.text, fontSize: 13, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{p.name}</div>
-                        <div style={{ color: T.textMuted, fontSize:11, marginTop: 2 }}>{p.alias}</div>
+                        <div style={{ fontWeight: 700, color: T.text, fontSize: 13, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{p.name}</div>
+                        <div style={{ color: T.textMuted, fontSize:11, marginTop: 2, fontWeight: 500 }}>{p.alias}</div>
                       </div>
                     </div>
                   </td>
                   <td className="td m" style={{ fontFamily: "monospace", fontSize:12 }}>{p.sku}</td>
                   <td className="td">{cat && <span className="tag liquid-trans" style={{ background: cat.color + "18", color: cat.color }}>{cat.name}</span>}</td>
-                  <td className="td r">{p.opening}</td>
-                  <td className="td r" style={{ color: T.blue, fontWeight: 500 }}>{p.purchased}</td>
-                  <td className="td r" style={{ color: T.red, fontWeight: 500 }}>-{p.sold}</td>
-                  <td className="td r" style={{ color: T.green, fontWeight: 500 }}>+{p.salesReturned}</td>
-                  <td className="td r" style={{ color: T.red, fontWeight: 500 }}>-{p.purReturned}</td>
-                  <td className="td r" style={{ color: T.amber, fontWeight: 500 }}>-{p.damaged}</td>
-                  <td className="td r" style={{ fontWeight: 700, fontSize: 15, color: p.stock <= 0 ? T.red : p.stock <= Number(p.minStock || 0) ? T.amber : T.text }}>{p.stock}</td>
-                  <td className="td r" style={{ fontWeight: 600, color: T.accent, fontSize: 14 }}>{fmtCur(p.value)}</td>
+                  <td className="td r" style={{ fontWeight: 600 }}>{p.opening}</td>
+                  <td className="td r" style={{ color: T.blue, fontWeight: 600 }}>{p.purchased}</td>
+                  <td className="td r" style={{ color: T.red, fontWeight: 600 }}>-{p.sold}</td>
+                  <td className="td r" style={{ color: T.green, fontWeight: 600 }}>+{p.salesReturned}</td>
+                  <td className="td r" style={{ color: T.red, fontWeight: 600 }}>-{p.purReturned}</td>
+                  <td className="td r" style={{ color: T.amber, fontWeight: 600 }}>-{p.damaged}</td>
+                  <td className="td r" style={{ fontWeight: 800, fontSize: 15, color: p.stock <= 0 ? T.red : p.stock <= Number(p.minStock || 0) ? T.amber : T.text }}>{p.stock}</td>
+                  <td className="td r" style={{ fontWeight: 700, color: T.accent, fontSize: 14 }}>{fmtCur(p.value)}</td>
                   <td className="td"><StChip stock={p.stock} min={Number(p.minStock || 0)} /></td>
                   {isAdmin && (
                     <td className="td">
@@ -278,23 +251,24 @@ export default function Inventory({ ctx }) {
           </tbody>
           <tfoot>
             <tr style={{ borderTop: `2px solid ${T.accent}30`, background: T.isDark ? "rgba(255,255,255,0.02)" : "rgba(0,0,0,0.01)" }}>
-              <td className="td" style={{ fontWeight: 700, fontSize: 14, padding: "16px" }} colSpan={9}>TOTAL VALUE</td>
+              <td className="td" style={{ fontWeight: 800, fontSize: 14, padding: "16px" }} colSpan={10}>TOTAL INVENTORY VALUE</td>
               <td className="td r" style={{ fontWeight: 800, color: T.accent, fontSize: 16, padding: "16px" }}>{fmtCur(totalValue)}</td>
               <td className="td" />{isAdmin && <td className="td" />}
             </tr>
           </tfoot>
         </table>
+        {filtered.length === 0 && <div style={{ padding: "60px 0", textAlign: "center", color: T.textMuted, fontSize: 14, fontWeight: 600 }}>No products found matching filters</div>}
       </div>
       <Pager total={filtered.length} page={pg} ps={ps} setPage={setPg} setPs={setPs} />
     </div>
 
-    <Modal open={editOsModal} onClose={() => setEditOsModal(false)} title={`Edit Opening Stock: ${editOsProduct?.name}`} width={440}
+    <Modal open={editOsModal} onClose={() => setEditOsModal(false)} title={`Opening Stock: ${editOsProduct?.name}`} width={440}
       footer={<><GBtn v="ghost" onClick={() => setEditOsModal(false)}>Cancel</GBtn><GBtn onClick={saveEditOs} icon={<Layers size={14} />}>Save Stock</GBtn></>}>
       {editOsProduct && (
         <div style={{ display: "flex", flexDirection: "column", gap: 18 }}>
-          <div className="spring-in" style={{ padding: "12px 16px", borderRadius: T.radius, background: T.blueBg, border: `1px solid ${T.blue}25`, fontSize: 13, color: T.blue }}>
-            Current opening stock: <strong>{transactions.filter(t => t.productId === editOsProduct.id && t.type === "opening").reduce((s, t) => s + Number(t.qty), 0)} units</strong><br/>
-            Current total stock: <strong>{getStock(editOsProduct.id)} units</strong>
+          <div className="spring-in" style={{ padding: "14px 18px", borderRadius: T.radius, background: T.blueBg, border: `1px solid ${T.blue}25`, fontSize: 13, color: T.blue, lineHeight: 1.5 }}>
+            Current opening stock: <strong style={{fontSize: 14}}>{transactions.filter(t => t.productId === editOsProduct.id && t.type === "opening").reduce((s, t) => s + Number(t.qty), 0)}</strong> units<br/>
+            Current total stock: <strong style={{fontSize: 14}}>{getStock(editOsProduct.id)}</strong> units
           </div>
           <Field label="New Opening Qty" req>
             <GIn type="number" min="0" value={editOsQty} onChange={e => setEditOsQty(e.target.value)} placeholder="Enter opening stock quantity" />
@@ -302,8 +276,8 @@ export default function Inventory({ ctx }) {
           <Field label="Date">
             <GIn type="date" value={editOsDate} onChange={e => setEditOsDate(e.target.value)} />
           </Field>
-          <div style={{ fontSize: 12, color: T.textMuted, padding: "10px 14px", background: T.isDark ? "rgba(255,255,255,0.04)" : "rgba(0,0,0,0.03)", borderRadius: T.radius, lineHeight: 1.5 }}>
-             This replaces all existing opening stock entries for this product. Other transactions (purchases, sales) are unaffected.
+          <div style={{ fontSize: 12, color: T.textMuted, padding: "12px 16px", background: T.isDark ? "rgba(255,255,255,0.04)" : "rgba(0,0,0,0.03)", borderRadius: T.radius, lineHeight: 1.5, fontWeight: 500 }}>
+             This replaces all existing opening stock entries for this product. Other transactions (purchases, sales, returns) are completely unaffected.
           </div>
         </div>
       )}
