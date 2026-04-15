@@ -6,13 +6,16 @@ import { uid, calcMgn, dlCSV } from "../utils";
 
 export default function Products({ ctx }) {
   const T = useT();
-  const { products, categories, getStock, saveProducts, saveCategories, user, addChangeReq, addLog } = ctx;
+  // Phase 1: Pulled 'aliases' out of ctx
+  const { products, categories, aliases = [], getStock, saveProducts, saveCategories, user, addChangeReq, addLog } = ctx;
   const isAdmin = user.role === "admin";
   const isManager = user.role === "manager";
 
   const [tab, setTab] = useState("products");
   const [search, setSearch] = useState("");
   const [cf, setCf] = useState("");
+  const [aliasFilter, setAliasFilter] = useState(""); // Phase 1: New Alias Filter State
+  
   const [modal, setModal] = useState(false);
   const [delConfirmProd, setDelConfirmProd] = useState(null);
   const [delConfirmCat, setDelConfirmCat] = useState(null);
@@ -26,11 +29,11 @@ export default function Products({ ctx }) {
   const [catForm, setCatForm] = useState({ name: "", color: "#C05C1E" });
 
   const [csvModal, setCsvModal] = useState(false);
-  const [csvPreview, setCsvPreview] = useState([]); // parsed rows waiting to import
+  const [csvPreview, setCsvPreview] = useState([]);
   const [csvErrors, setCsvErrors] = useState([]);
   const csvInputRef = React.useRef(null);
 
-  useEffect(() => setPg(1), [search, cf, ps]);
+  useEffect(() => setPg(1), [search, cf, aliasFilter, ps]);
 
   const ff = (k, v) => setForm(p => {
     const n = { ...p, [k]: v };
@@ -40,6 +43,9 @@ export default function Products({ ctx }) {
 
   const filtered = useMemo(() => products.filter(p => {
     if (cf && p.categoryId !== cf) return false;
+    // Phase 1: Apply Alias Filter
+    if (aliasFilter && p.alias !== aliasFilter) return false; 
+    
     const q = search.toLowerCase();
     return (
       (p.name || "").toLowerCase().includes(q) ||
@@ -47,13 +53,13 @@ export default function Products({ ctx }) {
       (p.alias || "").toLowerCase().includes(q) ||
       (p.hsn || "").toLowerCase().includes(q)
     );
-  }), [products, search, cf]);
+  }), [products, search, cf, aliasFilter]);
 
   // ── CSV Template columns ─────────────────────────────────────────────────
   const CSV_COLS = ["name","alias","sku","hsn","category","gstRate","mrp","purchasePrice","unit","minStock","imageUrl","description"];
   const CSV_SAMPLE = [
-    "Pipal Apex Matt Copper Bottle,Copper Bottle,PFGCO0592,74181022,Copper Bottle,5,2549,632,pcs,10,https://pipalhome.com/cdn/shop/files/img.jpg,Premium copper water bottle",
-    "Brass Tumbler 250ml,Brass Tumbler,BT-001,74182000,Brass Cookware,12,899,210,pcs,5,,Handcrafted brass tumbler"
+    "Pipal Apex Matt Copper Bottle,Finished Goods,PFGCO0592,74181022,Copper Bottle,5,2549,632,pcs,10,https://pipalhome.com/cdn/shop/files/img.jpg,Premium copper water bottle",
+    "Cardboard Box Packing,Packaging Material,BOX-001,48191010,Packaging,12,0,21,pcs,500,,Brown corrugated box"
   ];
 
   const exportTemplate = () => {
@@ -72,7 +78,6 @@ export default function Products({ ctx }) {
       const lines = ev.target.result.split("\n").map(l => l.trim()).filter(Boolean);
       if (lines.length < 2) { alert("File appears empty"); return; }
 
-      // Detect header row
       const headerLine = lines[0].toLowerCase();
       const hasHeader = headerLine.includes("name") || headerLine.includes("sku") || headerLine.includes("mrp");
       const dataLines = hasHeader ? lines.slice(1) : lines;
@@ -81,8 +86,8 @@ export default function Products({ ctx }) {
         : CSV_COLS;
 
       const colIdx = col => {
-        const aliases = { name:["name","productname"], alias:["alias","shortname"], sku:["sku","code"], hsn:["hsn","hsncode"], mrp:["mrp","sellingprice","price"], purchaseprice:["purchaseprice","cost","costprice","buyprice"], gstrate:["gstrate","gst","tax"], unit:["unit","uom"], minstock:["minstock","reorderqty","minqty"], description:["description","desc"], category:["category","categoryname","cat"], imageurl:["imageurl","image","imagelink","img"] };
-        const aliasList = aliases[col] || [col];
+        const aliasesDict = { name:["name","productname"], alias:["alias","type","producttype"], sku:["sku","code"], hsn:["hsn","hsncode"], mrp:["mrp","sellingprice","price"], purchaseprice:["purchaseprice","cost","costprice","buyprice"], gstrate:["gstrate","gst","tax"], unit:["unit","uom"], minstock:["minstock","reorderqty","minqty"], description:["description","desc"], category:["category","categoryname","cat"], imageurl:["imageurl","image","imagelink","img"] };
+        const aliasList = aliasesDict[col] || [col];
         for (const a of aliasList) { const i = headers.indexOf(a); if (i !== -1) return i; }
         return -1;
       };
@@ -90,7 +95,6 @@ export default function Products({ ctx }) {
       const parsed = []; const errors = [];
       dataLines.forEach((line, idx) => {
         if (!line.trim()) return;
-        // Handle quoted CSV fields
         const cols = [];
         let cur = "", inQ = false;
         for (const ch of line) {
@@ -110,7 +114,7 @@ export default function Products({ ctx }) {
         parsed.push({
           id: uid(),
           name,
-          alias: get("alias") || name.slice(0, 20),
+          alias: get("alias") || "Misc",
           sku: get("sku") || `SKU-${Date.now()}-${idx}`,
           hsn: get("hsn") || "",
           mrp, purchasePrice: cost,
@@ -135,7 +139,6 @@ export default function Products({ ctx }) {
 
   const confirmImport = () => {
     if (csvPreview.length === 0) return;
-    // Skip duplicates by SKU
     const existingSkus = new Set(products.map(p => p.sku));
     const toAdd = csvPreview.filter(p => !existingSkus.has(p.sku));
     const dupes = csvPreview.length - toAdd.length;
@@ -204,19 +207,26 @@ export default function Products({ ctx }) {
           )}
 
           <div className="filter-wrap">
-            <div style={{ position: "relative", flex: "1 1 200px" }}>
+            <div style={{ position: "relative", flex: "1 1 150px" }}>
               <Search size={13} style={{ position: "absolute", left: 12, top: "50%", transform: "translateY(-50%)", color: T.textMuted }} />
-              <input className="inp" value={search} onChange={e => setSearch(e.target.value)} placeholder="Search name, SKU, alias, HSN…" style={{ paddingLeft: 34 }} />
+              <input className="inp" value={search} onChange={e => setSearch(e.target.value)} placeholder="Search name, SKU, HSN…" style={{ paddingLeft: 34 }} />
             </div>
-            <GS value={cf} onChange={e => setCf(e.target.value)} placeholder="All Categories">
+            
+            {/* Phase 1: New Alias / Product Type Filter */}
+            <GS value={aliasFilter} onChange={e => setAliasFilter(e.target.value)} placeholder="All Types" style={{ flex: "0 1 140px" }}>
+              {aliases.map(a => <option key={a} value={a}>{a}</option>)}
+            </GS>
+
+            <GS value={cf} onChange={e => setCf(e.target.value)} placeholder="All Categories" style={{ flex: "0 1 140px" }}>
               {categories.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
             </GS>
+            
             {isAdmin && <>
-              <GBtn v="ghost" sz="sm" onClick={exportTemplate} icon={<Download size={13} />}>CSV Template</GBtn>
-              <GBtn v="ghost" sz="sm" onClick={() => csvInputRef.current?.click()} icon={<Upload size={13} />}>Import CSV</GBtn>
+              <GBtn v="ghost" sz="sm" onClick={exportTemplate} icon={<Download size={13} />}>CSV</GBtn>
+              <GBtn v="ghost" sz="sm" onClick={() => csvInputRef.current?.click()} icon={<Upload size={13} />}>Import</GBtn>
               <input ref={csvInputRef} type="file" accept=".csv,text/csv" onChange={handleCSVFile} style={{ display: "none" }} />
             </>}
-            <GBtn onClick={() => { setForm({ unit: "pcs", minStock: 10, gstRate: "0", hsn: "" }); setEditId(null); setModal(true); }} icon={<Plus size={14} />}>Add Product</GBtn>
+            <GBtn onClick={() => { setForm({ unit: "pcs", minStock: 10, gstRate: "0", hsn: "", alias: aliases[0] || "" }); setEditId(null); setModal(true); }} icon={<Plus size={14} />}>Add Product</GBtn>
           </div>
 
           <div className="glass" style={{ borderRadius: T.radius, overflow: "hidden" }}>
@@ -226,7 +236,7 @@ export default function Products({ ctx }) {
                   <tr style={{ background: T.isDark ? "rgba(255,255,255,0.03)" : "rgba(0,0,0,0.025)" }}>
                     <th className="th">PRODUCT</th>
                     <th className="th">SKU / HSN</th>
-                    <th className="th">CATEGORY</th>
+                    <th className="th">CATEGORY / TYPE</th>
                     <th className="th r">MRP</th>
                     <th className="th r">COST</th>
                     <th className="th r">MARGIN</th>
@@ -250,7 +260,6 @@ export default function Products({ ctx }) {
                             </div>
                             <div>
                               <div style={{ fontWeight: 600, color: T.text, fontSize: 12 }}>{p.name}</div>
-                              <div style={{ color: T.textMuted, fontSize:11 }}>{p.alias}</div>
                             </div>
                           </div>
                         </td>
@@ -259,7 +268,10 @@ export default function Products({ ctx }) {
                           {p.hsn ? <div style={{ fontFamily: "monospace", fontSize:11, color: T.textMuted }}>HSN {p.hsn}</div> : null}
                         </td>
                         <td className="td">
-                          {cat ? <span className="tag" style={{ background: cat.color + "18", color: cat.color }}>{cat.name}</span> : null}
+                          <div style={{ display: "flex", flexDirection: "column", gap: 4, alignItems: "flex-start" }}>
+                            {cat ? <span className="tag" style={{ background: cat.color + "18", color: cat.color }}>{cat.name}</span> : null}
+                            {p.alias ? <span style={{ fontSize: 10, fontWeight: 600, color: T.textSub, background: T.borderSubtle, padding: "2px 6px", borderRadius: 4 }}>{p.alias}</span> : null}
+                          </div>
                         </td>
                         <td className="td r" style={{ fontFamily: T.displayFont, fontWeight: 700, color: T.accent, fontSize: 13 }}>
                           ₹{Number(p.mrp || 0).toLocaleString("en-IN")}
@@ -288,7 +300,7 @@ export default function Products({ ctx }) {
                 </tbody>
               </table>
               {filtered.length === 0 && (
-                <div style={{ padding: "40px 0", textAlign: "center", color: T.textMuted }}>No products</div>
+                <div style={{ padding: "40px 0", textAlign: "center", color: T.textMuted }}>No products found</div>
               )}
             </div>
             <Pager total={filtered.length} page={pg} ps={ps} setPage={setPg} setPs={setPs} />
@@ -307,7 +319,6 @@ export default function Products({ ctx }) {
               const col = c.color || "#C05C1E";
               return (
                 <div key={c.id} className="glass" style={{ padding: 16, borderRadius: T.radius, display: "flex", flexDirection: "column", gap: 10 }}>
-                  {/* icon row */}
                   <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between" }}>
                     <div style={{ width: 40, height: 40, borderRadius: T.radius, background: col + "18", border: "2px solid " + col + "28", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
                       <Tag size={18} color={col} />
@@ -323,12 +334,10 @@ export default function Products({ ctx }) {
                       )}
                     </div>
                   </div>
-                  {/* name + count */}
                   <div>
                     <div style={{ fontWeight: 700, color: T.text, fontSize: 13, lineHeight: 1.3 }}>{c.name}</div>
                     <div style={{ fontSize: 11, color: T.textMuted, marginTop: 3 }}>{cnt} product{cnt !== 1 ? "s" : ""}</div>
                   </div>
-                  {/* color bar */}
                   <div style={{ height: 3, borderRadius: T.radiusFull, background: col + "40", overflow: "hidden" }}>
                     <div style={{ height: "100%", width: cnt > 0 ? "100%" : "20%", background: col, borderRadius: T.radiusFull, opacity: cnt > 0 ? 1 : 0.3 }} />
                   </div>
@@ -352,12 +361,20 @@ export default function Products({ ctx }) {
 
       <Modal open={modal} onClose={() => setModal(false)} title={editId ? "Edit Product" : "Add Product"} width={540} footer={footer}>
         <div className="fgrid">
-          <Field label="Product Name" req><GIn value={form.name || ""} onChange={e => ff("name", e.target.value)} placeholder="Copper Water Bottle 1L" /></Field>
-          <Field label="Alias"><GIn value={form.alias || ""} onChange={e => ff("alias", e.target.value)} placeholder="Copper Bottle" /></Field>
-          <Field label="SKU" req><GIn value={form.sku || ""} onChange={e => ff("sku", e.target.value)} placeholder="PH-CU-001" /></Field>
-          <Field label="HSN Code"><GIn value={form.hsn || ""} onChange={e => ff("hsn", e.target.value)} placeholder="e.g. 74182090" /></Field>
+          <Field label="Product Name" req cl="s2"><GIn value={form.name || ""} onChange={e => ff("name", e.target.value)} placeholder="e.g. Cardboard Box 12x12" /></Field>
+          
+          {/* Phase 1: Alias is now a Dropdown Selection */}
+          <Field label="Product Type (Alias)" req>
+            <GS value={form.alias || ""} onChange={e => ff("alias", e.target.value)} placeholder="Select Type">
+              {aliases.map(a => <option key={a} value={a}>{a}</option>)}
+              {form.alias && !aliases.includes(form.alias) && <option value={form.alias}>{form.alias} (Legacy)</option>}
+            </GS>
+          </Field>
+          
+          <Field label="SKU" req><GIn value={form.sku || ""} onChange={e => ff("sku", e.target.value)} placeholder="BOX-001" /></Field>
+          <Field label="HSN Code"><GIn value={form.hsn || ""} onChange={e => ff("hsn", e.target.value)} placeholder="e.g. 48191010" /></Field>
           <Field label="Category">
-            <GS value={form.categoryId || ""} onChange={e => ff("categoryId", e.target.value)} placeholder="Select">
+            <GS value={form.categoryId || ""} onChange={e => ff("categoryId", e.target.value)} placeholder="Select Category">
               {categories.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
             </GS>
           </Field>
@@ -370,8 +387,8 @@ export default function Products({ ctx }) {
               <option value="28">28%</option>
             </GS>
           </Field>
-          <Field label="MRP (₹)" req><GIn type="number" value={form.mrp || ""} onChange={e => ff("mrp", parseFloat(e.target.value) || 0)} /></Field>
-          <Field label="Purchase Price (₹)" req><GIn type="number" value={form.purchasePrice || ""} onChange={e => ff("purchasePrice", parseFloat(e.target.value) || 0)} /></Field>
+          <Field label="MRP / Selling Price (₹)" req><GIn type="number" value={form.mrp || ""} onChange={e => ff("mrp", parseFloat(e.target.value) || 0)} /></Field>
+          <Field label="Purchase Cost (₹)" req><GIn type="number" value={form.purchasePrice || ""} onChange={e => ff("purchasePrice", parseFloat(e.target.value) || 0)} /></Field>
           <Field label="Margin %"><GIn value={form.margin ? form.margin + "%" : "—"} readOnly /></Field>
           <Field label="Min Stock Alert"><GIn type="number" value={form.minStock || ""} onChange={e => ff("minStock", parseInt(e.target.value) || 0)} /></Field>
           <Field label="Unit"><GIn value={form.unit || ""} onChange={e => ff("unit", e.target.value)} placeholder="pcs / set / kg" /></Field>
@@ -393,7 +410,6 @@ export default function Products({ ctx }) {
         </div>
       </Modal>
 
-      {/* CSV Import Preview Modal */}
       <Modal open={csvModal} onClose={() => { setCsvModal(false); setCsvPreview([]); setCsvErrors([]); }} title={`Import Products — ${csvPreview.length} found`} width={700}
         footer={<>
           <GBtn v="ghost" onClick={() => { setCsvModal(false); setCsvPreview([]); setCsvErrors([]); }}>Cancel</GBtn>
@@ -421,7 +437,7 @@ export default function Products({ ctx }) {
             <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 11 }}>
               <thead>
                 <tr style={{ background: T.isDark ? "rgba(255,255,255,0.04)" : "rgba(0,0,0,0.04)", position: "sticky", top: 0 }}>
-                  {["Img", "Name", "Alias", "SKU", "HSN", "Category", "GST%", "MRP", "Cost", "Margin", "Unit", "Min Stock"].map(h => (
+                  {["Img", "Name", "Type (Alias)", "SKU", "HSN", "Category", "GST%", "MRP", "Cost", "Margin", "Unit", "Min Stock"].map(h => (
                     <th key={h} className="th" style={{ padding: "6px 10px", fontSize:11 }}>{h.toUpperCase()}</th>
                   ))}
                 </tr>
