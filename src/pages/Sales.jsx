@@ -1,7 +1,7 @@
 import React, { useState, useMemo, useEffect } from "react";
 import { Plus, X, Eye, Trash2, Send, Edit2, TrendingUp, DollarSign, FileText, Package, Printer, Download } from "lucide-react";
 import { useT } from "../theme";
-import { KCard, GBtn, DeleteConfirmModal, GS, Modal, Pager, PeriodBar, SearchInput } from "../components/UI";
+import { KCard, GBtn, DeleteConfirmModal, GS, GIn, GTa, Field, Modal, Pager, PeriodBar, SearchInput } from "../components/UI"; // <-- FIXED IMPORTS
 import BillForm from "../components/BillForm";
 import InvoiceModal, { buildHTML } from "../components/InvoiceModal";
 import { uid, today, fmtCur, fmtDate, inRange, calcBillGst, safeDate, getPresetDate, safeNum } from "../utils";
