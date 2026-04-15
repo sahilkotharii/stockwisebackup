@@ -29,7 +29,7 @@ function buildTokens(accentKey = "copper", isDark = false, customColor = null) {
     surfaceStrong: "rgba(39, 39, 42, 0.8)", 
     border: "rgba(255, 255, 255, 0.08)",
     borderSubtle: "rgba(255, 255, 255, 0.04)",
-    glassShine: "rgba(255, 255, 255, 0.1)",
+    glassShine: "rgba(255, 255, 255, 0.05)", /* Subtle top shine */
     shadow: "0 4px 12px -1px rgba(0, 0, 0, 0.4)",
     shadowLg: "0 12px 28px -3px rgba(0, 0, 0, 0.6)",
     shadowXl: "0 25px 50px -12px rgba(0, 0, 0, 0.8)",
@@ -46,9 +46,9 @@ function buildTokens(accentKey = "copper", isDark = false, customColor = null) {
     bg: "#F4F7F9",
     surfaceGlass: "rgba(255, 255, 255, 0.65)", 
     surfaceStrong: "rgba(255, 255, 255, 0.95)",
-    border: "rgba(255, 255, 255, 0.6)",
+    border: "rgba(255, 255, 255, 0.5)",
     borderSubtle: "rgba(255, 255, 255, 0.3)",
-    glassShine: "rgba(255, 255, 255, 0.8)",
+    glassShine: "rgba(255, 255, 255, 0.9)", /* Premium white shine */
     shadow: "0 4px 12px rgba(0, 0, 0, 0.03)",
     shadowLg: "0 12px 24px rgba(0, 0, 0, 0.06)",
     shadowXl: "0 24px 48px rgba(0, 0, 0, 0.08)",
@@ -88,34 +88,33 @@ body{font-family:${T.displayFont};background:${T.bgGradient};background-attachme
 input,select,textarea,button{font-family:${T.displayFont};font-size:13px}
 select option{background:${T.isDark?"#18181b":"#fff"};color:${T.text}}
 
-/* Smooth, Professional Animations (No Wiggle) */
+/* Smooth, Elegant Animations (No Wiggle/Recoil) */
 @keyframes smoothFadeUp {
-  0% { opacity: 0; transform: translateY(8px); }
+  0% { opacity: 0; transform: translateY(6px); }
   100% { opacity: 1; transform: translateY(0); }
 }
 @keyframes smoothFadeDown {
-  0% { opacity: 0; transform: translateY(-8px); }
+  0% { opacity: 0; transform: translateY(-6px); }
   100% { opacity: 1; transform: translateY(0); }
 }
 
 .liquid-trans { transition: all 0.3s ease; }
-.fade-up { animation: smoothFadeUp 0.4s ease forwards; }
-.spring-in { animation: smoothFadeUp 0.3s ease forwards; }
-.spring-down { animation: smoothFadeDown 0.3s ease forwards; transform-origin: top; }
+.fade-up { animation: smoothFadeUp 0.4s ease-out forwards; }
+.spring-in { animation: smoothFadeUp 0.3s ease-out forwards; }
+.spring-down { animation: smoothFadeDown 0.3s ease-out forwards; transform-origin: top; }
 
-/* True Glassmorphism with Shine */
+/* True Glassmorphism with Very Thin Shine */
 .glass {
   background: ${T.surfaceGlass};
   backdrop-filter: blur(20px);
   -webkit-backdrop-filter: blur(20px);
   border: 1px solid ${T.border};
-  border-top: 1px solid ${T.glassShine};
-  border-left: 1px solid ${T.glassShine};
-  box-shadow: ${T.shadow};
+  /* The secret to the premium shine: an inset shadow instead of thick borders */
+  box-shadow: inset 0 1px 1px ${T.glassShine}, ${T.shadow};
   transition: all 0.3s ease;
 }
 .glass:hover {
-  box-shadow: ${T.shadowLg};
+  box-shadow: inset 0 1px 1px ${T.glassShine}, ${T.shadowLg};
   transform: translateY(-1px);
   background: ${T.surfaceStrong};
 }
@@ -124,8 +123,7 @@ select option{background:${T.isDark?"#18181b":"#fff"};color:${T.text}}
   backdrop-filter: blur(30px);
   -webkit-backdrop-filter: blur(30px);
   border: 1px solid ${T.border};
-  border-top: 1px solid ${T.glassShine};
-  box-shadow: ${T.shadowXl};
+  box-shadow: inset 0 1px 1px ${T.glassShine}, ${T.shadowXl};
 }
 
 /* Professional Buttons */
@@ -172,32 +170,37 @@ body.sidebar-collapsed .main-wrap { margin-left: calc(88px + 24px) !important; }
 .td.r{text-align:right}
 
 /* Grids */
-.kgrid{display:grid;grid-auto-flow:column;grid-auto-columns:1fr;gap:16px;align-items:stretch}
+.kgrid{display:grid;grid-template-columns:repeat(auto-fit, minmax(200px, 1fr));gap:16px;align-items:stretch}
 .fgrid{display:grid;grid-template-columns:1fr 1fr;gap:16px}
 .fgrid .s2{grid-column:1/-1}
 .filter-wrap{display:flex;flex-wrap:wrap;gap:10px;align-items:center}
 .cb{width:16px;height:16px;accent-color:${T.accent};cursor:pointer;flex-shrink:0;border-radius:4px;transition:all 0.2s}
 
 /* Modals */
-.modal-overlay{background:rgba(0, 0, 0, 0.4);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px)}
+.modal-overlay{background:rgba(0, 0, 0, 0.5);backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px)}
 
-/* Mobile Adjustments */
+/* Mobile Adjustments - FIXES THE SQUISHED GRIDS */
 .mobile-nav{display:none}
 .settings-tabs{display:flex;flex-wrap:wrap;gap:8px}
 
 @media(max-width:768px){
   .mobile-nav{display:flex;position:fixed;bottom:0;left:0;right:0;z-index:100;background:${T.surfaceGlass};backdrop-filter:blur(24px);border-top:1px solid ${T.border};justify-content:space-evenly;align-items:stretch;padding-bottom:env(safe-area-inset-bottom,0px)}
   .desktop-sidebar{display:none!important}
-  .main-wrap{margin-left:0!important;padding:16px 16px 90px!important;overflow-x:hidden!important}
-  .kgrid{grid-auto-flow:row!important;grid-template-columns:1fr 1fr!important;gap:12px!important}
+  
+  /* Main Container Fixes */
+  .main-wrap{margin-left:0!important;padding:16px 12px 90px!important;overflow-x:hidden!important;width:100%}
+  
+  /* Force Grids to single column to avoid squishing */
+  .kgrid{grid-template-columns:1fr!important;gap:12px!important}
   .fgrid{grid-template-columns:1fr!important;gap:14px!important}
   .fgrid .s2{grid-column:1!important}
-  .filter-wrap{gap:10px!important;flex-wrap:wrap!important}
+  .chart-row { grid-template-columns:1fr!important; }
   
-  /* Fixed Mobile Period Bar Layout */
-  .period-bar-wrap { width: 100%; justify-content: space-between; }
-  .period-bar-wrap select { width: 100% !important; margin-bottom: 8px; }
-  .period-bar-wrap .inp { flex: 1 !important; width: auto !important; }
+  /* Filter wrap overrides */
+  .filter-wrap{gap:10px!important;flex-wrap:wrap!important; width: 100%;}
+  
+  /* Override hardcoded padding on glass containers */
+  .glass { padding: 16px !important; }
   
   .settings-tabs{flex-wrap:nowrap!important;overflow-x:auto!important;gap:8px!important;padding-bottom:4px;scrollbar-width:none}
   .settings-tabs::-webkit-scrollbar{display:none}
