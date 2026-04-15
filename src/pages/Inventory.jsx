@@ -155,9 +155,9 @@ export default function Inventory({ ctx }) {
       <KCard label="Out of Stock" value={oos.length.toString()} sub="Click to filter" icon={AlertOctagon} color={T.red} onClick={() => setStockF(stockF==="oos"?"all":"oos")} active={stockF==="oos"} />
     </div>
 
-    <div className="glass spring-in liquid-trans" style={{ padding: "24px 30px", borderRadius: T.radius, background: `linear-gradient(135deg, ${T.accentBg}, ${T.accent}15)`, border: `1px solid ${T.accent}30`, display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 16 }}>
+    <div className="glass spring-in liquid-trans" style={{ padding: 24, borderRadius: T.radius, background: `linear-gradient(135deg, ${T.accentBg}, ${T.accent}15)`, border: `1px solid ${T.accent}30`, display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 16 }}>
       <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
-        <div className="liquid-trans" style={{ width: 48, height: 48, borderRadius: T.radius, background: `linear-gradient(135deg,${T.accent},${T.accentDark})`, display: "flex", alignItems: "center", justifyContent: "center", boxShadow: `0 4px 16px ${T.accent}50` }}><DollarSign size={24} color="#fff" /></div>
+        <div className="liquid-trans" style={{ width: 48, height: 48, borderRadius: T.radius, background: `linear-gradient(135deg,${T.accent},${T.accentDark})`, display: "flex", alignItems: "center", justifyContent: "center", boxShadow: `0 4px 16px ${T.accent}50`, flexShrink: 0 }}><DollarSign size={24} color="#fff" /></div>
         <div>
           <div style={{ fontFamily: T.displayFont, fontWeight: 800, fontSize: 26, color: T.accent, letterSpacing: "-0.02em" }}>{fmtCur(totalValue)}</div>
           <div style={{ fontSize: 13, color: T.textSub, marginTop: 2, fontWeight: 500 }}>Total Inventory Value in Hand <span style={{ color: T.textMuted }}>(ex-GST · at purchase price)</span></div>
@@ -171,11 +171,11 @@ export default function Inventory({ ctx }) {
     </div>
 
     <div className="glass fade-up" style={{ borderRadius: T.radius, overflow: "hidden" }}>
-      <div style={{ padding: "20px 24px", borderBottom: `1px solid ${T.borderSubtle}`, background: T.surfaceGlass }}>
+      <div style={{ padding: 24, borderBottom: `1px solid ${T.borderSubtle}`, background: T.surfaceGlass }}>
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 16, flexWrap: "wrap", gap: 12 }}>
           <div>
-            <div style={{ fontFamily: T.displayFont, fontWeight: 700, fontSize: 16, color: T.text }}>Stock Register</div>
-            <div style={{ fontSize: 12, color: T.textMuted, marginTop: 2 }}>Inventory value calculated at ex-GST purchase price</div>
+            <div style={{ fontFamily: T.displayFont, fontWeight: 800, fontSize: 18, color: T.text }}>Stock Register</div>
+            <div style={{ fontSize: 12, color: T.textMuted, marginTop: 4 }}>Inventory value calculated at ex-GST purchase price</div>
           </div>
           <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
             {isAdmin && <>
@@ -188,8 +188,7 @@ export default function Inventory({ ctx }) {
         </div>
         <div className="filter-wrap" style={{ gap: 12 }}>
           <div style={{ position: "relative", flex: "1 1 200px" }}>
-            <Search size={14} style={{ position: "absolute", left: 12, top: "50%", transform: "translateY(-50%)", color: T.textMuted }} />
-            <input className="inp liquid-trans" value={search} onChange={e => setSearch(e.target.value)} placeholder="Search product…" style={{ paddingLeft: 36 }} />
+            <SearchInput value={search} onChange={e => setSearch(e.target.value)} placeholder="Search product…" />
           </div>
           <GS value={catF} onChange={e => setCatF(e.target.value)} placeholder="All Categories">
             {categories.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
@@ -245,7 +244,7 @@ export default function Inventory({ ctx }) {
             {filtered.slice((pg-1)*ps, pg*ps).map(p => {
               const cat = categories.find(c => c.id === p.categoryId);
               return (
-                <tr key={p.id} className="trow">
+                <tr key={p.id} className="trow liquid-trans">
                   <td className="td" style={{ maxWidth: 220 }}>
                     <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
                       {p.imageUrl && <img src={p.imageUrl} alt="" className="liquid-trans" style={{ width: 32, height: 32, borderRadius: T.radius, objectFit: "cover", flexShrink: 0, border: `1px solid ${T.border}` }} onError={e => e.target.style.display = "none"} />}
