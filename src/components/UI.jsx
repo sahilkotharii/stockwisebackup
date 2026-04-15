@@ -1,6 +1,6 @@
 import React, { useEffect } from "react";
 import { useT } from "../theme";
-import { X, ChevronDown, ArrowUpRight, ArrowDownRight, Search } from "lucide-react"; // <-- FIXED MISSING SEARCH ICON
+import { X, ChevronDown, ArrowUpRight, ArrowDownRight, Search } from "lucide-react";
 
 export function GCard({ c, style, cl = "", onClick }) {
   const T = useT();
@@ -70,13 +70,14 @@ export function Modal({ open, onClose, title, children, footer, width = 560 }) {
   if (!open) return null;
   return (
     <div onClick={onClose} className="modal-overlay fade-up" style={{ position: "fixed", top: 0, left: 0, right: 0, bottom: 0, width: "100vw", height: "100vh", zIndex: 99999, display: "flex", alignItems: "center", justifyContent: "center", padding: 16 }}>
-      <div className="glass-strong spring-in" onClick={e => e.stopPropagation()} style={{ width: "100%", maxWidth: width, borderRadius: T.radiusXl, maxHeight: "90vh", display: "flex", flexDirection: "column", overflow: "hidden" }}>
-        <div style={{ padding: "20px 24px", borderBottom: `1px solid ${T.borderSubtle}`, display: "flex", justifyContent: "space-between", alignItems: "center", background: T.surfaceStrong }}>
+      {/* Overflow set to visible inside modal body so dropdowns break out properly! */}
+      <div className="glass-strong spring-in" onClick={e => e.stopPropagation()} style={{ width: "100%", maxWidth: width, borderRadius: T.radiusXl, maxHeight: "95vh", display: "flex", flexDirection: "column", overflow: "visible" }}>
+        <div style={{ padding: "20px 24px", borderBottom: `1px solid ${T.borderSubtle}`, display: "flex", justifyContent: "space-between", alignItems: "center", background: T.surfaceStrong, borderRadius: `${T.radiusXl} ${T.radiusXl} 0 0` }}>
           <div style={{ fontWeight: 800, fontSize: 18, color: T.text, letterSpacing: "-0.02em" }}>{title}</div>
           <button type="button" onClick={onClose} className="btn-ghost" style={{ padding: 8, borderRadius: "50%" }}><X size={18} /></button>
         </div>
-        <div style={{ padding: 24, overflowY: "auto", background: T.surfaceGlass }}>{children}</div>
-        {footer && <div style={{ padding: "20px 24px", borderTop: `1px solid ${T.borderSubtle}`, background: T.surfaceStrong, display: "flex", justifyContent: "flex-end", gap: 12 }}>{footer}</div>}
+        <div style={{ padding: "20px 24px", overflowY: "auto", overflowX: "visible", background: T.surfaceGlass, flex: 1 }}>{children}</div>
+        {footer && <div style={{ padding: "20px 24px", borderTop: `1px solid ${T.borderSubtle}`, background: T.surfaceStrong, display: "flex", justifyContent: "flex-end", gap: 12, borderRadius: `0 0 ${T.radiusXl} ${T.radiusXl}` }}>{footer}</div>}
       </div>
     </div>
   );
@@ -85,7 +86,6 @@ export function Modal({ open, onClose, title, children, footer, width = 560 }) {
 export function KCard({ label, value, sub, icon: Icon, color, delta, onClick, active }) {
   const T = useT();
   const c = color || T.accent;
-  
   return <div className="glass" style={{ padding: 24, borderRadius: T.radius, cursor: onClick ? "pointer" : "default", border: active ? `2px solid ${c}` : undefined, display: "flex", flexDirection: "column", height: "100%" }} onClick={onClick}>
     <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 20 }}>
       <div>
