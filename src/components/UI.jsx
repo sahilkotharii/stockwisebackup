@@ -1,6 +1,6 @@
 import React, { useEffect } from "react";
 import { useT } from "../theme";
-import { X, ChevronDown, ArrowUpRight, ArrowDownRight } from "lucide-react";
+import { X, ChevronDown, ArrowUpRight, ArrowDownRight, Search } from "lucide-react"; // <-- FIXED MISSING SEARCH ICON
 
 export function GCard({ c, style, cl = "", onClick }) {
   const T = useT();
@@ -60,7 +60,6 @@ export function Toast({ msg, type }) {
   </div>;
 }
 
-// FULL SCREEN MODAL FIX
 export function Modal({ open, onClose, title, children, footer, width = 560 }) {
   const T = useT();
   useEffect(() => {
@@ -108,7 +107,6 @@ export function KCard({ label, value, sub, icon: Icon, color, delta, onClick, ac
   </div>;
 }
 
-// FULLY REWRITTEN PERIOD BAR FOR FLAWLESS MOBILE & DESKTOP
 export function PeriodBar({ df, setDf, dt, setDt, preset, setPreset }) {
   const T = useT();
   const PRESETS = [
@@ -128,16 +126,14 @@ export function PeriodBar({ df, setDf, dt, setDt, preset, setPreset }) {
     }
   };
   return (
-    <div className="glass" style={{ display: "flex", alignItems: "center", gap: 10, padding: "6px 12px", borderRadius: T.radiusFull, flexWrap: "wrap", width: "fit-content" }}>
-      <select value={preset || ""} onChange={e => applyPreset(e.target.value)} style={{ background: "transparent", border: "none", outline: "none", color: T.text, fontWeight: 700, fontSize: 13, cursor: "pointer", padding: "4px 8px" }}>
+    <div className="filter-wrap period-bar-wrap" style={{ background: T.surfaceGlass, padding: "4px 8px", borderRadius: T.radius, border: `1px solid ${T.borderSubtle}` }}>
+      <select value={preset || ""} onChange={e => applyPreset(e.target.value)} className="sel" style={{ width: 140, fontWeight: 600, border: "none", background: "transparent", boxShadow: "none" }}>
         {PRESETS.map(p => <option key={p.k} value={p.k}>{p.l}</option>)}
       </select>
-      <div className="hide-mob" style={{ width: 1, height: 18, background: T.borderSubtle }} />
-      <div style={{ display: "flex", alignItems: "center", gap: 6, flexWrap: "nowrap" }}>
-        <input type="date" value={df || ""} onChange={e => { setDf(e.target.value); setPreset("custom"); }} style={{ background: "transparent", border: "none", outline: "none", color: T.textSub, fontSize: 13, padding: "4px", width: 110, fontWeight: 500 }} />
-        <span style={{ color: T.textMuted, fontWeight: 800 }}>→</span>
-        <input type="date" value={dt || ""} onChange={e => { setDt(e.target.value); setPreset("custom"); }} style={{ background: "transparent", border: "none", outline: "none", color: T.textSub, fontSize: 13, padding: "4px", width: 110, fontWeight: 500 }} />
-      </div>
+      <div className="hide-mob" style={{ width: 1, height: 20, background: T.borderSubtle }} />
+      <input type="date" className="inp" value={df || ""} onChange={e => { setDf(e.target.value); setPreset("custom"); }} style={{ width: 140, border: "none", background: "transparent", boxShadow: "none" }} />
+      <span style={{ color: T.textMuted, fontWeight: 700 }}>→</span>
+      <input type="date" className="inp" value={dt || ""} onChange={e => { setDt(e.target.value); setPreset("custom"); }} style={{ width: 140, border: "none", background: "transparent", boxShadow: "none" }} />
     </div>
   );
 }
@@ -154,19 +150,19 @@ export function SearchInput({ value, onChange, placeholder = "Search…", style 
 
 export function DeleteConfirmModal({ open, onClose, onConfirm, user, label = "this item", extra = "" }) {
   const T = useT();
-  const [pass, setPass] = React.useState("");
+  const [pass, setReactPass] = React.useState("");
   const [err, setErr] = React.useState("");
   if (!open) return null;
   const go = () => {
     if (!pass) { setErr("Enter your password"); return; }
     if (pass !== user?.password) { setErr("Incorrect password"); return; }
-    onConfirm(); setPass(""); setErr(""); onClose();
+    onConfirm(); setReactPass(""); setErr(""); onClose();
   };
   return (
     <Modal open={true} onClose={onClose} title="Confirm Deletion" width={420}>
       <div style={{ fontSize: 14, color: T.textSub, marginBottom: 20, lineHeight: 1.5 }}>Are you sure you want to delete <strong>{label}</strong>? {extra} <br/><br/><span style={{ color: T.red, fontWeight: 700, padding: "8px 12px", background: T.redBg, borderRadius: 8, display: "inline-block" }}>This action cannot be undone.</span></div>
       <Field label="Enter password to confirm" req>
-        <GIn type="password" value={pass} onChange={e=>{setPass(e.target.value);setErr("");}} autoFocus onKeyDown={e=>e.key==="Enter"&&go()} />
+        <GIn type="password" value={pass} onChange={e=>{setReactPass(e.target.value);setErr("");}} autoFocus onKeyDown={e=>e.key==="Enter"&&go()} />
       </Field>
       {err && <div style={{ fontSize: 13, color: T.red, marginTop: 8, fontWeight: 600 }}>{err}</div>}
       <div style={{ display: "flex", gap: 12, marginTop: 24, justifyContent: "flex-end" }}>
