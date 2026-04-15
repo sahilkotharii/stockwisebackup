@@ -71,9 +71,9 @@ export default function Dashboard({ ctx }) {
   return <div style={{ display:"flex", flexDirection:"column", gap:24 }}>
     
     {(oos.length > 0 || lowStock.length > 0) && (
-      <div className="glass fade-up liquid-trans" style={{ padding:"16px 20px", borderRadius: T.radius, background:T.amberBg, borderColor:`${T.amber}30` }}>
+      <div className="glass fade-up liquid-trans" style={{ padding: 24, borderRadius: T.radius, background:T.amberBg, borderColor:`${T.amber}30` }}>
         <div style={{ display:"flex", alignItems:"center", gap:12, marginBottom: (alertOpen.oos || alertOpen.low) ? 12 : 0 }}>
-          <div className="liquid-trans" style={{ width: 32, height: 32, borderRadius: "50%", background: `${T.amber}20`, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, boxShadow: `0 2px 10px ${T.amber}30` }}>
+          <div className="liquid-trans" style={{ width: 32, height: 32, borderRadius: "50%", background: `${T.amber}20`, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, boxShadow: `inset 0 1px 1px rgba(255,255,255,0.3)` }}>
             <AlertTriangle size={18} color={T.amber} />
           </div>
           <div style={{ fontWeight:800, fontSize:15, color:T.amber, flex:1, letterSpacing: "-0.01em" }}>Inventory Action Required</div>
@@ -127,8 +127,8 @@ export default function Dashboard({ ctx }) {
       <KCard label="Units Returned"  value={String(retTxns.reduce((s,t)=>s+Number(t.qty||0),0))} sub={`${retTxns.length} total return entries`} icon={DollarSign} color={T.red} />
     </div>
 
-    <div className="chart-row fade-up" style={{ display:"grid", gridTemplateColumns:"repeat(auto-fit, minmax(400px, 1fr))", gap:24 }}>
-      <div className="glass" style={{ padding:"24px 24px 16px", borderRadius:T.radius }}>
+    <div className="chart-row fade-up" style={{ display:"grid", gridTemplateColumns:"repeat(auto-fit, minmax(300px, 1fr))", gap:24 }}>
+      <div className="glass" style={{ padding: 24, borderRadius:T.radius }}>
         <div style={{ fontFamily:T.displayFont, fontWeight:800, fontSize:16, color:T.text, marginBottom:20 }}>Revenue vs Purchase</div>
         <ResponsiveContainer width="100%" height={240}>
           <BarChart data={dailyData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
@@ -142,7 +142,7 @@ export default function Dashboard({ ctx }) {
         </ResponsiveContainer>
       </div>
 
-      <div className="glass" style={{ padding:24, borderRadius:T.radius, display: "flex", flexDirection: "column" }}>
+      <div className="glass" style={{ padding: 24, borderRadius:T.radius, display: "flex", flexDirection: "column" }}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom:20 }}>
           <div style={{ fontFamily:T.displayFont, fontWeight:800, fontSize:16, color:T.text }}>Top Selling Products</div>
           <button className="btn-ghost" onClick={() => setPage && setPage("reports")} style={{ padding: "6px 12px", color: T.accent, fontSize: 12, fontWeight: 700 }}>
@@ -156,7 +156,7 @@ export default function Dashboard({ ctx }) {
             {topProds.map((item,i) => {
               const pct = (item.units/topProds[0].units)*100;
               return <div key={i} className="liquid-trans" style={{ display:"flex", alignItems:"center", gap:14, padding: "4px", borderRadius: T.radius }}>
-                <div style={{ width:28, height:28, borderRadius: "50%", background:i===0?`linear-gradient(135deg,${T.accent},${T.accentDark})`:T.isDark?"rgba(255,255,255,0.08)":"rgba(0,0,0,0.04)", display:"flex", alignItems:"center", justifyContent:"center", fontSize:12, fontWeight:800, color:i===0?"#fff":T.textSub, flexShrink:0, boxShadow: i===0?`0 4px 12px ${T.accent}50`:"none" }}>{i+1}</div>
+                <div style={{ width:28, height:28, borderRadius: "50%", background:i===0?`linear-gradient(135deg,${T.accent},${T.accentDark})`:T.isDark?"rgba(255,255,255,0.08)":"rgba(0,0,0,0.04)", display:"flex", alignItems:"center", justifyContent:"center", fontSize:12, fontWeight:800, color:i===0?"#fff":T.textSub, flexShrink:0, boxShadow: i===0?`0 2px 8px ${T.accent}40`:"none" }}>{i+1}</div>
                 <div style={{ flex:1, minWidth:0 }}>
                   <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 6 }}>
                     <div style={{ fontSize:13, fontWeight:600, color:T.text, overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap", paddingRight: 10 }}>{item.product?.name}</div>
@@ -172,7 +172,7 @@ export default function Dashboard({ ctx }) {
       </div>
     </div>
 
-    <div className="glass fade-up" style={{ padding:24, borderRadius:T.radius }}>
+    <div className="glass fade-up" style={{ padding: 24, borderRadius:T.radius }}>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom:20 }}>
         <div style={{ fontFamily:T.displayFont, fontWeight:800, fontSize:16, color:T.text }}>Recent Transactions</div>
         <button className="btn-ghost" onClick={() => setPage && setPage("transactions")} style={{ padding: "6px 12px", color: T.accent, fontSize: 12, fontWeight: 700 }}>
