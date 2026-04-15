@@ -12,12 +12,11 @@ export default function Inventory({ ctx }) {
   const [catF, setCatF] = useState("");
   const [search, setSearch] = useState("");
   const [sortBy, setSortBy] = useState("stock");
-  const [stockF, setStockF] = useState("all"); // all|healthy|low|oos|dead
+  const [stockF, setStockF] = useState("all"); 
   const [pg, setPg] = useState(1);
   const [ps, setPs] = useState(50);
   useEffect(() => setPg(1), [search, catF, sortBy, stockF]);
 
-  // ── Bulk Opening Stock CSV ──────────────────────────────────────────────
   const csvRef = useRef(null);
   const handleOsCsvFile = e => {
     const file = e.target.files[0];
@@ -33,8 +32,7 @@ export default function Inventory({ ctx }) {
       const qtyIdx = headers.indexOf("qty"); const dateIdx = headers.indexOf("date");
 
       let updated = 0;
-      const newTxns = [...transactions.filter(t => t.type !== "opening")]; // strip all existing opening
-      // Re-add all existing non-matching
+      const newTxns = [...transactions.filter(t => t.type !== "opening")]; 
       const existingOpening = transactions.filter(t => t.type === "opening");
       dataLines.forEach(line => {
         const cols = line.split(",").map(c => c.trim().replace(/^"|"$/g,""));
@@ -51,7 +49,6 @@ export default function Inventory({ ctx }) {
         newTxns.push({ id: uid(), productId: pr.id, type: "opening", qty, price: Number(pr.purchasePrice||0), effectivePrice: Number(pr.purchasePrice||0), gstRate:0, gstAmount:0, vendorId:null, channelId:null, date: dt||today(), notes:"Bulk opening stock import", userId:user.id, userName:user.name, billId:null, isDamaged:false });
         updated++;
       });
-      // Keep opening txns for products not in CSV
       existingOpening.forEach(t => {
         if (!newTxns.find(x => x.productId === t.productId && x.type === "opening")) newTxns.push(t);
       });
@@ -73,7 +70,6 @@ export default function Inventory({ ctx }) {
     const a = document.createElement("a"); a.href = "data:text/csv;charset=utf-8,"+encodeURIComponent(csv); a.download = "opening_stock_template.csv"; a.click();
   };
 
-  // ── Edit Opening Stock modal ─────────────────────────────────────────────
   const [editOsModal, setEditOsModal] = useState(false);
   const [editOsProduct, setEditOsProduct] = useState(null);
   const [editOsQty, setEditOsQty] = useState("");
@@ -91,9 +87,7 @@ export default function Inventory({ ctx }) {
     if (!editOsProduct) return;
     const newQty = parseInt(editOsQty) || 0;
     if (newQty < 0) { alert("Quantity cannot be negative"); return; }
-    // Remove existing opening transactions for this product
     const filtered = transactions.filter(t => !(t.productId === editOsProduct.id && t.type === "opening"));
-    // Add new opening transaction if qty > 0
     const newTxns = newQty > 0
       ? [{
           id: uid(),
@@ -117,7 +111,6 @@ export default function Inventory({ ctx }) {
     setEditOsProduct(null);
   };
 
-  // ── Product stats ─────────────────────────────────────────────────────────
   const productStats = useMemo(() => products.map(p => {
     const all = transactions.filter(t => t.productId === p.id);
     const opening = all.filter(t => t.type === "opening").reduce((s, t) => s + Number(t.qty), 0);
@@ -127,7 +120,6 @@ export default function Inventory({ ctx }) {
     const purReturned = all.filter(t => t.type === "purchase_return").reduce((s, t) => s + (Number(t.qty)||0), 0);
     const damaged = all.filter(t => t.type === "damaged" || t.isDamaged).reduce((s, t) => s + (Number(t.qty)||0), 0);
     const stock = getStock(p.id);
-    // Inventory value ALWAYS ex-GST (using product's purchasePrice which is ex-GST)
     const value = stock * Number(p.purchasePrice || 0);
     return { ...p, opening, purchased, sold, salesReturned, purReturned, damaged, stock, value };
   }), [products, transactions, getStock]);
@@ -138,7 +130,6 @@ export default function Inventory({ ctx }) {
       if (search && !p.name.toLowerCase().includes(search.toLowerCase()) && !(p.sku || "").toLowerCase().includes(search.toLowerCase())) return false;
       return true;
     });
-    // Stock filter
     if (stockF === "healthy") d = d.filter(p => p.stock > Number(p.minStock||0));
     else if (stockF === "low") d = d.filter(p => p.stock > 0 && p.stock <= Number(p.minStock||0));
     else if (stockF === "oos") d = d.filter(p => p.stock <= 0);
@@ -150,62 +141,55 @@ export default function Inventory({ ctx }) {
     return d;
   }, [productStats, catF, search, sortBy, stockF]);
 
-  // Inventory value = ex-GST purchase price * stock (correct basis for costing)
   const totalValue = filtered.reduce((s, p) => s + p.value, 0);
   const oos = filtered.filter(p => p.stock <= 0);
   const low = filtered.filter(p => p.stock > 0 && p.stock <= Number(p.minStock || 0));
   const healthy = filtered.filter(p => p.stock > Number(p.minStock || 0));
 
+  return <div style={{ display: "flex", flexDirection: "column", gap: 24 }}>
 
-  return <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
-
-    {/* KPIs */}
-    <div className="kgrid" style={{ gap: 14 }}>
-      <KCard label="Inventory Value" value={fmtCur(totalValue)} sub={`ex-GST · ${productStats.length} products`} icon={Box} color={T.accent} onClick={() => setStockF("all")} />
+    <div className="kgrid" style={{ gap: 20 }}>
+      <KCard label="Inventory Value" value={fmtCur(totalValue)} sub={`ex-GST · ${productStats.length} products`} icon={Box} color={T.accent} onClick={() => setStockF("all")} active={stockF==="all"} />
       <KCard label="Healthy Stock" value={healthy.length.toString()} sub="Click to filter" icon={CheckCircle} color={T.green} onClick={() => setStockF(stockF==="healthy"?"all":"healthy")} active={stockF==="healthy"} />
       <KCard label="Low Stock" value={low.length.toString()} sub="Click to filter" icon={AlertTriangle} color={T.amber} onClick={() => setStockF(stockF==="low"?"all":"low")} active={stockF==="low"} />
       <KCard label="Out of Stock" value={oos.length.toString()} sub="Click to filter" icon={AlertOctagon} color={T.red} onClick={() => setStockF(stockF==="oos"?"all":"oos")} active={stockF==="oos"} />
     </div>
 
-
-
-    {/* Total Inventory Value Banner */}
-    <div className="glass" style={{ padding: "14px 20px", borderRadius: T.radius, background: `linear-gradient(135deg, ${T.accentBg}, ${T.accent}10)`, border: `1px solid ${T.accent}30`, display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 12 }}>
-      <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-        <div style={{ width: 40, height: 40, borderRadius: T.radius, background: `linear-gradient(135deg,${T.accent},${T.accentDark})`, display: "flex", alignItems: "center", justifyContent: "center" }}><DollarSign size={18} color="#fff" /></div>
+    <div className="glass spring-in liquid-trans" style={{ padding: "24px 30px", borderRadius: T.radius, background: `linear-gradient(135deg, ${T.accentBg}, ${T.accent}15)`, border: `1px solid ${T.accent}30`, display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 16 }}>
+      <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
+        <div className="liquid-trans" style={{ width: 48, height: 48, borderRadius: T.radius, background: `linear-gradient(135deg,${T.accent},${T.accentDark})`, display: "flex", alignItems: "center", justifyContent: "center", boxShadow: `0 4px 16px ${T.accent}50` }}><DollarSign size={24} color="#fff" /></div>
         <div>
-          <div style={{ fontFamily: T.displayFont, fontWeight: 800, fontSize: 22, color: T.accent }}>{fmtCur(totalValue)}</div>
-          <div style={{ fontSize: 12, color: T.textSub, marginTop: 1 }}>Total Inventory Value in Hand <span style={{ color: T.textMuted }}>(ex-GST · at purchase price)</span></div>
+          <div style={{ fontFamily: T.displayFont, fontWeight: 800, fontSize: 26, color: T.accent, letterSpacing: "-0.02em" }}>{fmtCur(totalValue)}</div>
+          <div style={{ fontSize: 13, color: T.textSub, marginTop: 2, fontWeight: 500 }}>Total Inventory Value in Hand <span style={{ color: T.textMuted }}>(ex-GST · at purchase price)</span></div>
         </div>
       </div>
-      <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
-        <div style={{ padding: "6px 14px", borderRadius: T.radiusFull, background: T.greenBg, border: `1px solid ${T.green}25`, fontSize: 12 }}><span style={{ color: T.green, fontWeight: 700 }}>{healthy.length}</span><span style={{ color: T.textMuted }}> healthy</span></div>
-        <div style={{ padding: "6px 14px", borderRadius: T.radiusFull, background: T.amberBg, border: `1px solid ${T.amber}25`, fontSize: 12 }}><span style={{ color: T.amber, fontWeight: 700 }}>{low.length}</span><span style={{ color: T.textMuted }}> low</span></div>
-        <div style={{ padding: "6px 14px", borderRadius: T.radiusFull, background: T.redBg, border: `1px solid ${T.red}25`, fontSize: 12 }}><span style={{ color: T.red, fontWeight: 700 }}>{oos.length}</span><span style={{ color: T.textMuted }}> OOS</span></div>
+      <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
+        <div className="liquid-trans" style={{ padding: "8px 16px", borderRadius: T.radiusFull, background: T.greenBg, border: `1px solid ${T.green}25`, fontSize: 13 }}><span style={{ color: T.green, fontWeight: 700 }}>{healthy.length}</span><span style={{ color: T.textMuted, fontWeight: 500 }}> healthy</span></div>
+        <div className="liquid-trans" style={{ padding: "8px 16px", borderRadius: T.radiusFull, background: T.amberBg, border: `1px solid ${T.amber}25`, fontSize: 13 }}><span style={{ color: T.amber, fontWeight: 700 }}>{low.length}</span><span style={{ color: T.textMuted, fontWeight: 500 }}> low</span></div>
+        <div className="liquid-trans" style={{ padding: "8px 16px", borderRadius: T.radiusFull, background: T.redBg, border: `1px solid ${T.red}25`, fontSize: 13 }}><span style={{ color: T.red, fontWeight: 700 }}>{oos.length}</span><span style={{ color: T.textMuted, fontWeight: 500 }}> OOS</span></div>
       </div>
     </div>
 
-    {/* Stock Register */}
-    <div className="glass" style={{ borderRadius: T.radius, overflow: "hidden" }}>
-      <div style={{ padding: "18px 18px 12px", borderBottom: `1px solid ${T.borderSubtle}` }}>
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 12, flexWrap: "wrap", gap: 10 }}>
+    <div className="glass fade-up" style={{ borderRadius: T.radius, overflow: "hidden" }}>
+      <div style={{ padding: "20px 24px", borderBottom: `1px solid ${T.borderSubtle}`, background: T.surfaceGlass }}>
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 16, flexWrap: "wrap", gap: 12 }}>
           <div>
-            <div style={{ fontFamily: T.displayFont, fontWeight: 700, fontSize: 15, color: T.text }}>Stock Register</div>
-            <div style={{ fontSize: 11, color: T.textMuted, marginTop: 2 }}>Inventory value calculated at ex-GST purchase price</div>
+            <div style={{ fontFamily: T.displayFont, fontWeight: 700, fontSize: 16, color: T.text }}>Stock Register</div>
+            <div style={{ fontSize: 12, color: T.textMuted, marginTop: 2 }}>Inventory value calculated at ex-GST purchase price</div>
           </div>
-          <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+          <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
             {isAdmin && <>
-              <GBtn sz="sm" v="ghost" onClick={exportOsTemplate} icon={<Download size={13} />}>Opening Stock Template</GBtn>
-              <GBtn sz="sm" v="ghost" onClick={() => csvRef.current?.click()} icon={<Upload size={13} />}>Import Opening Stock</GBtn>
+              <GBtn sz="sm" v="ghost" onClick={exportOsTemplate} icon={<Download size={14} />}>Opening Stock Template</GBtn>
+              <GBtn sz="sm" v="ghost" onClick={() => csvRef.current?.click()} icon={<Upload size={14} />}>Import Opening Stock</GBtn>
               <input ref={csvRef} type="file" accept=".csv" onChange={handleOsCsvFile} style={{ display: "none" }} />
             </>}
-            <GBtn v="ghost" sz="sm" onClick={() => dlCSV(toCSV(filtered.map(p => ({ name: p.name, sku: p.sku, opening: p.opening, purchased: p.purchased, sold: p.sold, salesReturned: p.salesReturned, purReturned: p.purReturned, damaged: p.damaged, stock: p.stock, value: p.value })), ["name","sku","opening","purchased","sold","salesReturned","purReturned","damaged","stock","value"]), "inventory")} icon={<Download size={13} />}>Export Register</GBtn>
+            <GBtn v="ghost" sz="sm" onClick={() => dlCSV(toCSV(filtered.map(p => ({ name: p.name, sku: p.sku, opening: p.opening, purchased: p.purchased, sold: p.sold, salesReturned: p.salesReturned, purReturned: p.purReturned, damaged: p.damaged, stock: p.stock, value: p.value })), ["name","sku","opening","purchased","sold","salesReturned","purReturned","damaged","stock","value"]), "inventory")} icon={<Download size={14} />}>Export Register</GBtn>
           </div>
         </div>
-        <div className="filter-wrap">
-          <div style={{ position: "relative", flex: "1 1 160px" }}>
-            <Search size={13} style={{ position: "absolute", left: 10, top: "50%", transform: "translateY(-50%)", color: T.textMuted }} />
-            <input className="inp" value={search} onChange={e => setSearch(e.target.value)} placeholder="Search product…" style={{ paddingLeft: 30 }} />
+        <div className="filter-wrap" style={{ gap: 12 }}>
+          <div style={{ position: "relative", flex: "1 1 200px" }}>
+            <Search size={14} style={{ position: "absolute", left: 12, top: "50%", transform: "translateY(-50%)", color: T.textMuted }} />
+            <input className="inp liquid-trans" value={search} onChange={e => setSearch(e.target.value)} placeholder="Search product…" style={{ paddingLeft: 36 }} />
           </div>
           <GS value={catF} onChange={e => setCatF(e.target.value)} placeholder="All Categories">
             {categories.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
@@ -217,42 +201,42 @@ export default function Inventory({ ctx }) {
             <option value="name">Sort: Name</option>
           </GS>
         </div>
-        {/* Stock status filter pills */}
-        <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginTop: 8 }}>
+        
+        <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginTop: 12 }}>
           {[
             { k: "all",     l: "All",           color: T.accent,  count: productStats.length },
-            { k: "healthy", l: "Healthy",        color: T.green,   count: productStats.filter(p => p.stock > Number(p.minStock||0)).length },
-            { k: "low",     l: "Low Stock",      color: T.amber,   count: productStats.filter(p => p.stock > 0 && p.stock <= Number(p.minStock||0)).length },
-            { k: "oos",     l: "Out of Stock",   color: T.red,     count: productStats.filter(p => p.stock <= 0).length },
-            { k: "dead",    l: "Dead Stock",     color: "#7C3AED", count: productStats.filter(p => p.sold === 0 && p.stock > 0).length },
+            { k: "healthy", l: "Healthy",       color: T.green,   count: productStats.filter(p => p.stock > Number(p.minStock||0)).length },
+            { k: "low",     l: "Low Stock",     color: T.amber,   count: productStats.filter(p => p.stock > 0 && p.stock <= Number(p.minStock||0)).length },
+            { k: "oos",     l: "Out of Stock",  color: T.red,     count: productStats.filter(p => p.stock <= 0).length },
+            { k: "dead",    l: "Dead Stock",    color: "#7C3AED", count: productStats.filter(p => p.sold === 0 && p.stock > 0).length },
           ].map(f => (
-            <button key={f.k} onClick={() => setStockF(stockF === f.k && f.k !== "all" ? "all" : f.k)}
+            <button key={f.k} className="liquid-trans" onClick={() => setStockF(stockF === f.k && f.k !== "all" ? "all" : f.k)}
               style={{
-                padding: "5px 12px", borderRadius: T.radiusFull, fontSize: 11, fontWeight: 600,
-                border: `1.5px solid ${stockF === f.k ? f.color : T.borderSubtle}`,
+                padding: "6px 14px", borderRadius: T.radiusFull, fontSize: 12, fontWeight: 600,
+                border: `1.5px solid ${stockF === f.k ? f.color : "transparent"}`,
                 cursor: "pointer",
-                background: stockF === f.k ? `${f.color}18` : "transparent",
+                background: stockF === f.k ? `${f.color}15` : T.isDark ? "rgba(255,255,255,0.05)" : "rgba(0,0,0,0.04)",
                 color: stockF === f.k ? f.color : T.textSub,
-                transition: "all .15s",
-                display: "flex", alignItems: "center", gap: 5
+                display: "flex", alignItems: "center", gap: 6,
+                boxShadow: stockF === f.k ? `0 2px 8px ${f.color}30` : "none"
               }}>
               {f.l}
               <span style={{
-                background: stockF === f.k ? f.color : T.isDark ? "rgba(255,255,255,0.1)" : "rgba(0,0,0,0.08)",
+                background: stockF === f.k ? f.color : T.isDark ? "rgba(255,255,255,0.1)" : "rgba(0,0,0,0.06)",
                 color: stockF === f.k ? "#fff" : T.textMuted,
-                padding: "1px 6px", borderRadius: 99, fontSize: 10, fontWeight: 700, minWidth: 18, textAlign: "center"
+                padding: "2px 8px", borderRadius: 99, fontSize: 11, fontWeight: 700, minWidth: 20, textAlign: "center"
               }}>{f.count}</span>
             </button>
           ))}
         </div>
       </div>
-      <div style={{ overflowX: "auto" }}>
-        <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 12 }}>
+      <div style={{ overflowX: "auto", background: T.surfaceGlass }}>
+        <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
           <thead>
-            <tr style={{ background: T.isDark ? "rgba(255,255,255,0.03)" : "rgba(0,0,0,0.025)" }}>
+            <tr style={{ background: T.isDark ? "rgba(255,255,255,0.02)" : "rgba(0,0,0,0.015)" }}>
               {["Product", "SKU", "Category", "Opening", "+Purchased", "-Sold", "+Sale Ret", "-Pur Ret", "-Damaged", "= Stock", "Value (ex-GST)", "Status", isAdmin ? "Edit" : ""].filter(Boolean).map(h => (
                 <th key={h} className="th" style={{ textAlign: ["Opening", "+Purchased", "-Sold", "+Sale Ret", "-Pur Ret", "-Damaged", "= Stock", "Value (ex-GST)"].includes(h) ? "right" : "left" }}>
-                  {h.toUpperCase()}
+                  {h}
                 </th>
               ))}
             </tr>
@@ -262,30 +246,30 @@ export default function Inventory({ ctx }) {
               const cat = categories.find(c => c.id === p.categoryId);
               return (
                 <tr key={p.id} className="trow">
-                  <td className="td" style={{ maxWidth: 200 }}>
-                    <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                      {p.imageUrl && <img src={p.imageUrl} alt="" style={{ width: 28, height: 28, borderRadius: T.radius, objectFit: "cover", flexShrink: 0 }} onError={e => e.target.style.display = "none"} />}
+                  <td className="td" style={{ maxWidth: 220 }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                      {p.imageUrl && <img src={p.imageUrl} alt="" className="liquid-trans" style={{ width: 32, height: 32, borderRadius: T.radius, objectFit: "cover", flexShrink: 0, border: `1px solid ${T.border}` }} onError={e => e.target.style.display = "none"} />}
                       <div style={{ minWidth: 0 }}>
-                        <div style={{ fontWeight: 600, color: T.text, fontSize: 12, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{p.name}</div>
-                        <div style={{ color: T.textMuted, fontSize:11 }}>{p.alias}</div>
+                        <div style={{ fontWeight: 600, color: T.text, fontSize: 13, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{p.name}</div>
+                        <div style={{ color: T.textMuted, fontSize:11, marginTop: 2 }}>{p.alias}</div>
                       </div>
                     </div>
                   </td>
-                  <td className="td m" style={{ fontFamily: "monospace", fontSize:11 }}>{p.sku}</td>
-                  <td className="td">{cat && <span className="tag" style={{ background: cat.color + "18", color: cat.color }}>{cat.name}</span>}</td>
+                  <td className="td m" style={{ fontFamily: "monospace", fontSize:12 }}>{p.sku}</td>
+                  <td className="td">{cat && <span className="tag liquid-trans" style={{ background: cat.color + "18", color: cat.color }}>{cat.name}</span>}</td>
                   <td className="td r">{p.opening}</td>
-                  <td className="td r" style={{ color: T.blue }}>{p.purchased}</td>
-                  <td className="td r" style={{ color: T.red }}>-{p.sold}</td>
-                  <td className="td r" style={{ color: T.green }}>+{p.salesReturned}</td>
-                  <td className="td r" style={{ color: T.red }}>-{p.purReturned}</td>
-                  <td className="td r" style={{ color: T.amber }}>-{p.damaged}</td>
-                  <td className="td r" style={{ fontWeight: 700, fontSize: 14, color: p.stock <= 0 ? T.red : p.stock <= Number(p.minStock || 0) ? T.amber : T.text }}>{p.stock}</td>
-                  <td className="td r" style={{ fontWeight: 600, color: T.accent }}>{fmtCur(p.value)}</td>
+                  <td className="td r" style={{ color: T.blue, fontWeight: 500 }}>{p.purchased}</td>
+                  <td className="td r" style={{ color: T.red, fontWeight: 500 }}>-{p.sold}</td>
+                  <td className="td r" style={{ color: T.green, fontWeight: 500 }}>+{p.salesReturned}</td>
+                  <td className="td r" style={{ color: T.red, fontWeight: 500 }}>-{p.purReturned}</td>
+                  <td className="td r" style={{ color: T.amber, fontWeight: 500 }}>-{p.damaged}</td>
+                  <td className="td r" style={{ fontWeight: 700, fontSize: 15, color: p.stock <= 0 ? T.red : p.stock <= Number(p.minStock || 0) ? T.amber : T.text }}>{p.stock}</td>
+                  <td className="td r" style={{ fontWeight: 600, color: T.accent, fontSize: 14 }}>{fmtCur(p.value)}</td>
                   <td className="td"><StChip stock={p.stock} min={Number(p.minStock || 0)} /></td>
                   {isAdmin && (
                     <td className="td">
-                      <button className="btn-ghost" onClick={() => openEditOs(p)} style={{ padding: "4px 8px" }} title="Edit opening stock">
-                        <Edit2 size={12} />
+                      <button className="btn-ghost liquid-trans" onClick={() => openEditOs(p)} style={{ padding: "6px 10px" }} title="Edit opening stock">
+                        <Edit2 size={14} />
                       </button>
                     </td>
                   )}
@@ -294,23 +278,24 @@ export default function Inventory({ ctx }) {
             })}
           </tbody>
           <tfoot>
-            <tr style={{ borderTop: `2px solid ${T.accent}30` }}>
-              <td className="td" style={{ fontWeight: 700, fontSize: 13 }} colSpan={9}>TOTAL</td>
-              <td className="td r" style={{ fontWeight: 700, color: T.accent, fontSize: 14 }}>{fmtCur(totalValue)}</td>
+            <tr style={{ borderTop: `2px solid ${T.accent}30`, background: T.isDark ? "rgba(255,255,255,0.02)" : "rgba(0,0,0,0.01)" }}>
+              <td className="td" style={{ fontWeight: 700, fontSize: 14, padding: "16px" }} colSpan={9}>TOTAL VALUE</td>
+              <td className="td r" style={{ fontWeight: 800, color: T.accent, fontSize: 16, padding: "16px" }}>{fmtCur(totalValue)}</td>
               <td className="td" />{isAdmin && <td className="td" />}
             </tr>
           </tfoot>
         </table>
       </div>
+      <Pager total={filtered.length} page={pg} ps={ps} setPage={setPg} setPs={setPs} />
     </div>
 
-    {/* Edit Opening Stock Modal */}
-    <Modal open={editOsModal} onClose={() => setEditOsModal(false)} title={`Edit Opening Stock: ${editOsProduct?.name}`} width={400}
-      footer={<><GBtn v="ghost" onClick={() => setEditOsModal(false)}>Cancel</GBtn><GBtn onClick={saveEditOs} icon={<Layers size={13} />}>Save Opening Stock</GBtn></>}>
+    <Modal open={editOsModal} onClose={() => setEditOsModal(false)} title={`Edit Opening Stock: ${editOsProduct?.name}`} width={440}
+      footer={<><GBtn v="ghost" onClick={() => setEditOsModal(false)}>Cancel</GBtn><GBtn onClick={saveEditOs} icon={<Layers size={14} />}>Save Stock</GBtn></>}>
       {editOsProduct && (
-        <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
-          <div style={{ padding: "10px 14px", borderRadius: T.radius, background: T.blueBg, border: `1px solid ${T.blue}25`, fontSize: 12, color: T.blue }}>
-            Current opening stock: <strong>{transactions.filter(t => t.productId === editOsProduct.id && t.type === "opening").reduce((s, t) => s + Number(t.qty), 0)} units</strong> · Current total stock: <strong>{getStock(editOsProduct.id)} units</strong>
+        <div style={{ display: "flex", flexDirection: "column", gap: 18 }}>
+          <div className="spring-in" style={{ padding: "12px 16px", borderRadius: T.radius, background: T.blueBg, border: `1px solid ${T.blue}25`, fontSize: 13, color: T.blue }}>
+            Current opening stock: <strong>{transactions.filter(t => t.productId === editOsProduct.id && t.type === "opening").reduce((s, t) => s + Number(t.qty), 0)} units</strong><br/>
+            Current total stock: <strong>{getStock(editOsProduct.id)} units</strong>
           </div>
           <Field label="New Opening Qty" req>
             <GIn type="number" min="0" value={editOsQty} onChange={e => setEditOsQty(e.target.value)} placeholder="Enter opening stock quantity" />
@@ -318,7 +303,7 @@ export default function Inventory({ ctx }) {
           <Field label="Date">
             <GIn type="date" value={editOsDate} onChange={e => setEditOsDate(e.target.value)} />
           </Field>
-          <div style={{ fontSize: 11, color: T.textMuted, padding: "8px 12px", background: T.isDark ? "rgba(255,255,255,0.04)" : "rgba(0,0,0,0.04)", borderRadius: T.radius }}>
+          <div style={{ fontSize: 12, color: T.textMuted, padding: "10px 14px", background: T.isDark ? "rgba(255,255,255,0.04)" : "rgba(0,0,0,0.03)", borderRadius: T.radius, lineHeight: 1.5 }}>
              This replaces all existing opening stock entries for this product. Other transactions (purchases, sales) are unaffected.
           </div>
         </div>
