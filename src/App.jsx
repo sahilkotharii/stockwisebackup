@@ -56,11 +56,12 @@ export default function App() {
     // Admins see absolutely everything
     if (role === "admin") return page;
     
-    // Set up basic allowed pages everyone gets
-    let allowed = ["dashboard"];
+    // Set up basic allowed pages EVERYONE gets
+    let allowed = ["dashboard", "settings"]; 
     
     if (role.includes("sales")) {
-      allowed.push("sales", "returns", "products", "transactions");
+      // Sales gets Vendors to add customers
+      allowed.push("sales", "returns", "products", "transactions", "vendors");
     } 
     else if (role.includes("purchase")) {
       allowed.push("purchase", "returns", "vendors", "products", "transactions");
@@ -69,8 +70,8 @@ export default function App() {
       allowed.push("inventory", "products", "transactions", "returns");
     } 
     else {
-      // Fallback standard manager
-      allowed = ["dashboard", "sales", "purchase", "inventory", "reports", "products", "vendors", "transactions", "returns"];
+      // Fallback standard manager (No PnL, No Approvals)
+      allowed.push("sales", "purchase", "inventory", "reports", "products", "vendors", "transactions", "returns");
     }
 
     // Force user to dashboard if they try to access an unauthorized page (like PnL)
