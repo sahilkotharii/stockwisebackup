@@ -60,6 +60,7 @@ export function Toast({ msg, type }) {
   </div>;
 }
 
+// FULL SCREEN MODAL SCROLLING FIX
 export function Modal({ open, onClose, title, children, footer, width = 560 }) {
   const T = useT();
   useEffect(() => {
@@ -69,15 +70,15 @@ export function Modal({ open, onClose, title, children, footer, width = 560 }) {
   }, [open]);
   if (!open) return null;
   return (
-    <div onClick={onClose} className="modal-overlay fade-up" style={{ position: "fixed", top: 0, left: 0, right: 0, bottom: 0, width: "100vw", height: "100vh", zIndex: 99999, display: "flex", alignItems: "center", justifyContent: "center", padding: 16 }}>
-      {/* Overflow set to visible inside modal body so dropdowns break out properly! */}
-      <div className="glass-strong spring-in" onClick={e => e.stopPropagation()} style={{ width: "100%", maxWidth: width, borderRadius: T.radiusXl, maxHeight: "95vh", display: "flex", flexDirection: "column", overflow: "visible" }}>
-        <div style={{ padding: "20px 24px", borderBottom: `1px solid ${T.borderSubtle}`, display: "flex", justifyContent: "space-between", alignItems: "center", background: T.surfaceStrong, borderRadius: `${T.radiusXl} ${T.radiusXl} 0 0` }}>
+    <div onClick={onClose} className="modal-overlay fade-up" style={{ position: "fixed", top: 0, left: 0, right: 0, bottom: 0, width: "100vw", height: "100vh", zIndex: 99999, display: "flex", alignItems: "center", justifyContent: "center", padding: "12px" }}>
+      <div className="glass-strong spring-in" onClick={e => e.stopPropagation()} style={{ width: "100%", maxWidth: width, borderRadius: T.radiusXl, maxHeight: "calc(100vh - 24px)", display: "flex", flexDirection: "column", overflow: "hidden" }}>
+        <div style={{ padding: "16px 20px", borderBottom: `1px solid ${T.borderSubtle}`, display: "flex", justifyContent: "space-between", alignItems: "center", background: T.surfaceStrong }}>
           <div style={{ fontWeight: 800, fontSize: 18, color: T.text, letterSpacing: "-0.02em" }}>{title}</div>
-          <button type="button" onClick={onClose} className="btn-ghost" style={{ padding: 8, borderRadius: "50%" }}><X size={18} /></button>
+          <button type="button" onClick={onClose} className="btn-ghost" style={{ padding: 6, borderRadius: "50%" }}><X size={18} /></button>
         </div>
-        <div style={{ padding: "20px 24px", overflowY: "auto", overflowX: "visible", background: T.surfaceGlass, flex: 1 }}>{children}</div>
-        {footer && <div style={{ padding: "20px 24px", borderTop: `1px solid ${T.borderSubtle}`, background: T.surfaceStrong, display: "flex", justifyContent: "flex-end", gap: 12, borderRadius: `0 0 ${T.radiusXl} ${T.radiusXl}` }}>{footer}</div>}
+        {/* minHeight: 0 is the magic CSS that allows this flex child to scroll properly on small screens */}
+        <div style={{ padding: "16px 20px", overflowY: "auto", background: T.surfaceGlass, flex: 1, minHeight: 0, overflowX: "hidden" }}>{children}</div>
+        {footer && <div style={{ padding: "16px 20px", borderTop: `1px solid ${T.borderSubtle}`, background: T.surfaceStrong, display: "flex", justifyContent: "flex-end", gap: 12 }}>{footer}</div>}
       </div>
     </div>
   );
