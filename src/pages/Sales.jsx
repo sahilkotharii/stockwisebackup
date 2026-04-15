@@ -58,23 +58,19 @@ export default function Sales({ ctx }) {
 
   const pp = pid => Number(products.find(pr => pr.id === pid)?.purchasePrice || 0);
 
-  // ── Bulk invoice download — same layout as single invoice PDF ────────────
   const downloadBulkInvoices = () => {
     const selected = saleBills.filter(b => selBills.has(b.id));
     if (selected.length === 0) return;
 
-    // buildHTML returns full HTML doc — extract just the .page div content
     const pages = selected.map((b, idx) => {
       const vendor = (vendors||[]).find(v => v.id === b.vendorId) || null;
       const html = buildHTML(b, invoiceSettings || {}, vendor);
-      // Extract the content inside <div class="page">
       const pageMatch = html.match(/<div class="page">([\s\S]*?)<\/div>\s*<\/body>/i);
       const content = pageMatch ? pageMatch[1] : html.replace(/<html>[\s\S]*?<body>/, "").replace(/<\/body>[\s\S]*/, "");
       const isLast = idx === selected.length - 1;
       return `<div class="page">${content}</div>${isLast ? "" : '<div style="page-break-after:always"></div>'}`;
     });
 
-    // Get the stylesheet from a single buildHTML call (shared across all pages)
     const sampleHtml = buildHTML(selected[0], invoiceSettings || {}, (vendors||[]).find(v => v.id === selected[0].vendorId) || null);
     const styleMatch = sampleHtml.match(/<style>([\s\S]*?)<\/style>/i);
     const sharedStyle = styleMatch ? styleMatch[1] : "";
@@ -83,7 +79,6 @@ export default function Sales({ ctx }) {
 <title>Invoices (${selected.length})</title>
 <style>
 ${sharedStyle}
-/* Multi-invoice overrides */
 @page { size: A4; margin: 12mm; }
 .page { width: 794px; min-height: 1050px; margin: 0 auto; padding: 24px; display: flex; flex-direction: column; page-break-inside: avoid; }
 @media print {
@@ -156,86 +151,91 @@ ${sharedStyle}
     addLog("deleted", "sale bill", b.billNo);
   };
 
-  return <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
-    {isManager && <div style={{ padding: "10px 14px", borderRadius: T.radius, background: T.amberBg, border: `1px solid ${T.amber}30`, fontSize: 12, color: T.amber, fontWeight: 600 }}> Manager mode — new sales require admin approval</div>}
+  return <div style={{ display: "flex", flexDirection: "column", gap: 24 }}>
+    {isManager && <div className="spring-in" style={{ padding: "12px 16px", borderRadius: T.radius, background: T.amberBg, border: `1px solid ${T.amber}30`, fontSize: 13, color: T.amber, fontWeight: 700, letterSpacing: "0.02em" }}> Manager mode — new sales require admin approval</div>}
 
-    {/* Filter + Actions */}
-    <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 10 }}>
+    <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 16 }}>
       <PeriodBar df={df} setDf={setDf} dt={dt} setDt={setDt} preset={preset} setPreset={setPreset} />
-      <GBtn sz="md" onClick={() => setModal(true)} icon={<Plus size={14} />}>New Sale Bill</GBtn>
+      <GBtn sz="md" onClick={() => setModal(true)} icon={<Plus size={16} />} style={{ fontSize: 14, fontWeight: 700, padding: "12px 24px", borderRadius: T.radiusFull, boxShadow: `0 4px 12px ${T.accent}40` }}>New Sale Bill</GBtn>
     </div>
 
-    {/* KPI Cards — 3 cards */}
-    <div className="kgrid" style={{ gap: 12 }}>
+    <div className="kgrid" style={{ gap: 20 }}>
       {[
         { label: "Total Sales", value: totalRevenueInclGst, sub: "incl. GST · all bills", icon: TrendingUp, color: T.green },
         { label: "Net Sales", value: netRevenueExclGst, sub: "excl. GST · all bills", icon: DollarSign, color: T.accent },
-        { label: "Units Sold", value: unitsSold, sub: "total qty across bills", icon: Package, color: T.purple, noFmt: true },
+        { label: "Units Sold", value: unitsSold, sub: "total qty across bills", icon: Package, color: "#8B5CF6", noFmt: true },
       ].map((k, i) => (
         <KCard key={i} label={k.label} value={k.noFmt ? String(k.value) : fmtCur(k.value)} sub={k.sub} icon={k.icon} color={k.color} />
       ))}
     </div>
 
-    {/* Bills table */}
-    <div className="glass" style={{ padding: 18, borderRadius: T.radius }}>
-      <div style={{ fontFamily: T.displayFont, fontWeight: 700, fontSize: 15, color: T.text, marginBottom: 14 }}>Sales Bills</div>
-      <div className="filter-wrap" style={{ marginBottom: 12 }}>
-        <div style={{ position: "relative", flex: "1 1 160px" }}>
-          
-          <input className="inp" value={search} onChange={e => setSearch(e.target.value)} placeholder="Search bill no, product…" style={{ paddingLeft: 28 }} />
+    <div className="glass fade-up" style={{ borderRadius: T.radius, overflow: "hidden" }}>
+      <div style={{ padding: "20px 24px", borderBottom: `1px solid ${T.borderSubtle}`, background: T.surfaceGlass }}>
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 16, flexWrap: "wrap", gap: 12 }}>
+          <div style={{ fontFamily: T.displayFont, fontWeight: 800, fontSize: 18, color: T.text, letterSpacing: "-0.01em" }}>Sales Bills</div>
         </div>
-        <GS value={vendorF} onChange={e => setVendorF(e.target.value)} placeholder="All Vendors">{vendors.map(v => <option key={v.id} value={v.id}>{v.name}</option>)}</GS>
-        {(vendorF || search) && <GBtn v="ghost" sz="sm" onClick={() => { setVendorF(""); setSearch(""); }} icon={<X size={12} />}>Clear</GBtn>}
+        
+        <div className="filter-wrap" style={{ gap: 12 }}>
+          <div style={{ position: "relative", flex: "1 1 200px" }}>
+            <SearchInput value={search} onChange={e => setSearch(e.target.value)} placeholder="Search bill no, product…" />
+          </div>
+          <GS value={vendorF} onChange={e => setVendorF(e.target.value)} placeholder="All Customers" style={{ flex: "0 1 200px" }}>
+            {vendors.map(v => <option key={v.id} value={v.id}>{v.name}</option>)}
+          </GS>
+          {(vendorF || search) && <GBtn v="ghost" sz="sm" onClick={() => { setVendorF(""); setSearch(""); }} icon={<X size={14} />} style={{ borderRadius: T.radiusFull }}>Clear</GBtn>}
+        </div>
+
+        {selBills.size > 0 && (
+          <div className="spring-down liquid-trans" style={{ marginTop: 16, padding: "12px 20px", borderRadius: T.radius, background: T.accentBg, display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap", border: `1px solid ${T.accent}30` }}>
+            <span style={{ fontSize: 13, fontWeight: 800, color: T.accent }}>{selBills.size} selected</span>
+            <GBtn sz="sm" onClick={downloadBulkInvoices} icon={<Download size={14} />}>Download {selBills.size} Invoice{selBills.size!==1?"s":""}</GBtn>
+            <GBtn v="danger" sz="sm" onClick={() => { if(isManager){if(window.confirm(`Request admin to delete ${selBills.size} bills?`)){saleBills.filter(b=>selBills.has(b.id)).forEach(b=>addChangeReq({entity:'sale',action:'delete',entityId:b.id,entityName:b.billNo,currentData:b,proposedData:null}));setSelBills(new Set());}}else if(window.confirm(`Delete ${selBills.size} bills?`)){const toDelIds=new Set(selBills);saveBills(bills.filter(x=>!toDelIds.has(x.id)));saveTransactions(transactions.filter(t=>!toDelIds.has(t.billId)));setSelBills(new Set());}}} icon={<Trash2 size={14} />}>{isManager?"Request Delete":"Delete Selected"}</GBtn>
+            <button className="liquid-trans" onClick={() => setSelBills(new Set())} style={{ marginLeft: "auto", background: "none", border: "none", cursor: "pointer", fontSize: 12, fontWeight: 600, color: T.textMuted }}>Clear Selection</button>
+          </div>
+        )}
       </div>
-      {selBills.size > 0 && (
-        <div style={{ marginBottom: 10, padding: "8px 14px", borderRadius: T.radius, background: T.accentBg, display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
-          <span style={{ fontSize: 12, fontWeight: 600, color: T.accent }}>{selBills.size} selected</span>
-          <GBtn sz="sm" onClick={downloadBulkInvoices} icon={<Download size={13} />}>Download {selBills.size} Invoice{selBills.size!==1?"s":""}</GBtn>
-          <GBtn v="danger" sz="sm" onClick={() => { if(isManager){if(window.confirm(`Request admin to delete ${selBills.size} bills?`)){saleBills.filter(b=>selBills.has(b.id)).forEach(b=>addChangeReq({entity:'sale',action:'delete',entityId:b.id,entityName:b.billNo,currentData:b,proposedData:null}));setSelBills(new Set());}}else if(window.confirm(`Delete ${selBills.size} bills?`)){const toDelIds=new Set(selBills);saveBills(bills.filter(x=>!toDelIds.has(x.id)));saveTransactions(transactions.filter(t=>!toDelIds.has(t.billId)));setSelBills(new Set());}}} icon={<Trash2 size={13} />}>{isManager?"Request Delete":"Delete Selected"}</GBtn>
-          <button onClick={() => setSelBills(new Set())} style={{ marginLeft: "auto", background: "none", border: "none", cursor: "pointer", fontSize: 11, color: T.textMuted }}>Clear</button>
-        </div>
-      )}
-      <div style={{ overflowX: "auto" }}>
-        <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 12 }}>
+
+      <div style={{ overflowX: "auto", background: T.surfaceGlass }}>
+        <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
           <thead><tr>
-            <th className="th" style={{ width: 36 }}>
-              <input type="checkbox" className="cb" checked={saleBills.length>0&&saleBills.every(b=>selBills.has(b.id))} onChange={e=>{if(e.target.checked){setSelBills(new Set(saleBills.map(b=>b.id)));}else{setSelBills(new Set());}}} />
+            <th className="th" style={{ width: 44, padding: "14px" }}>
+              <input type="checkbox" className="cb liquid-trans" checked={saleBills.length>0&&saleBills.every(b=>selBills.has(b.id))} onChange={e=>{if(e.target.checked){setSelBills(new Set(saleBills.map(b=>b.id)));}else{setSelBills(new Set());}}} />
             </th>
-            {["Bill No", "Date", "Vendor", "Items", "Subtotal", "Disc", "GST", "Total", ""].map((h, i) => (
-              <th key={i} className="th" style={{ textAlign: ["Subtotal", "Disc", "GST", "Total"].includes(h) ? "right" : "left" }}>{h.toUpperCase()}</th>
+            {["Bill No", "Date", "Customer", "Items", "Subtotal", "Disc", "GST", "Total", ""].map((h, i) => (
+              <th key={i} className="th" style={{ textAlign: ["Subtotal", "Disc", "GST", "Total"].includes(h) ? "right" : "left", padding: "14px 16px" }}>{h}</th>
             ))}
           </tr></thead>
           <tbody>
             {saleBills.slice((pg-1)*ps, pg*ps).map(b => {
               const v = vendors.find(x => x.id === b.vendorId);
               return <React.Fragment key={b.id}>
-                <tr className={`trow${selBills.has(b.id)?" row-sel":""}`}>
-                  <td className="td" onClick={e=>e.stopPropagation()}><input type="checkbox" className="cb" checked={selBills.has(b.id)} onChange={()=>tgBill(b.id)}/></td>
-                  <td className="td" style={{ fontWeight: 600, color: T.accent }}>{b.billNo}</td>
-                  <td className="td m">{fmtDate(b.date)}</td>
-                  <td className="td">{v?.name || "—"}</td>
-                  <td className="td m">{(b.items||[]).length}×</td>
-                  <td className="td r m">{fmtCur(b.subtotal)}</td>
-                  <td className="td r" style={{ color: (b.discAmount||0)>0 ? T.red : T.textMuted }}>{(b.discAmount||0)>0 ? `–${fmtCur(b.discAmount)}` : "—"}</td>
-                  <td className="td r" style={{ color: T.textMuted, fontSize: 11 }}>{calcBillGst(b)>0 ? fmtCur(calcBillGst(b)) : "—"}</td>
-                  <td className="td r" style={{ fontWeight: 700, color: T.green }}>{fmtCur(b.total)}</td>
+                <tr className={`trow liquid-trans ${selBills.has(b.id)?" row-sel":""}`} style={{ background: selBills.has(b.id) ? T.accentBg : "transparent" }}>
+                  <td className="td" style={{ padding: "14px" }} onClick={e=>e.stopPropagation()}><input type="checkbox" className="cb liquid-trans" checked={selBills.has(b.id)} onChange={()=>tgBill(b.id)}/></td>
+                  <td className="td" style={{ fontWeight: 800, color: T.accent, letterSpacing: "0.02em" }}>{b.billNo}</td>
+                  <td className="td m" style={{ fontWeight: 500 }}>{fmtDate(b.date)}</td>
+                  <td className="td" style={{ fontWeight: 600 }}>{v?.name || "—"}</td>
+                  <td className="td m" style={{ fontWeight: 500 }}>{(b.items||[]).length}×</td>
+                  <td className="td r m" style={{ fontWeight: 600 }}>{fmtCur(b.subtotal)}</td>
+                  <td className="td r" style={{ color: (b.discAmount||0)>0 ? T.red : T.textMuted, fontWeight: 600 }}>{(b.discAmount||0)>0 ? `–${fmtCur(b.discAmount)}` : "—"}</td>
+                  <td className="td r" style={{ color: T.textSub, fontSize: 12, fontWeight: 600 }}>{calcBillGst(b)>0 ? fmtCur(calcBillGst(b)) : "—"}</td>
+                  <td className="td r" style={{ fontWeight: 800, color: T.green, fontSize: 14 }}>{fmtCur(b.total)}</td>
                   <td className="td">
-                    <div style={{ display: "flex", gap: 3 }}>
-                      <button className="btn-ghost" onClick={() => setExp(p => ({...p,[b.id]:!p[b.id]}))} style={{ padding: "3px 6px" }}><Eye size={13} /></button>
-                      <button className="btn-ghost" onClick={() => setInvoiceBill(b)} style={{ padding: "3px 6px" }} title="View Invoice"><Printer size={13} /></button>
-                      {isAdmin && <button className="btn-ghost" onClick={() => setEditBill(b)} style={{ padding: "3px 6px" }}><Edit2 size={13} /></button>}
-                      {isAdmin && <button className="btn-danger" onClick={() => deleteBill(b)} style={{ padding: "3px 6px" }}><Trash2 size={11} /></button>}
+                    <div style={{ display: "flex", gap: 6, justifyContent: "flex-end" }}>
+                      <button className="btn-ghost liquid-trans" onClick={() => setExp(p => ({...p,[b.id]:!p[b.id]}))} style={{ padding: "6px 10px" }}><Eye size={14} /></button>
+                      <button className="btn-ghost liquid-trans" onClick={() => setInvoiceBill(b)} style={{ padding: "6px 10px" }} title="View Invoice"><Printer size={14} /></button>
+                      {isAdmin && <button className="btn-ghost liquid-trans" onClick={() => setEditBill(b)} style={{ padding: "6px 10px" }}><Edit2 size={14} /></button>}
+                      {isAdmin && <button className="btn-danger liquid-trans" onClick={() => deleteBill(b)} style={{ padding: "6px 10px" }}><Trash2 size={14} /></button>}
                     </div>
                   </td>
                 </tr>
-                {exp[b.id] && <tr style={{ background: T.isDark?"rgba(255,255,255,0.02)":"rgba(0,0,0,0.012)" }}>
+                {exp[b.id] && <tr className="spring-down" style={{ background: T.isDark ? "rgba(255,255,255,0.02)" : "rgba(0,0,0,0.015)" }}>
                   <td colSpan={10} style={{ padding: "0", borderBottom: `1px solid ${T.borderSubtle}` }}>
-                    <div style={{ padding: "12px 20px 14px" }}>
-                      <div style={{ overflowX: "auto", marginBottom: 10 }}>
-                        <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 11 }}>
-                          <thead><tr style={{ background: T.isDark?"rgba(255,255,255,0.04)":"rgba(0,0,0,0.04)" }}>
+                    <div style={{ padding: "20px 24px" }}>
+                      <div style={{ overflowX: "auto", marginBottom: 16, background: T.surfaceStrong, borderRadius: T.radius, border: `1px solid ${T.borderSubtle}` }}>
+                        <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 12 }}>
+                          <thead><tr style={{ background: T.isDark ? "rgba(255,255,255,0.02)" : "rgba(0,0,0,0.02)" }}>
                             {["#","Description","HSN","Qty","Unit","MRP","Rate (ex-GST)","GST%","Line Total"].map((h,i) => (
-                              <th key={i} style={{ padding:"5px 8px", textAlign:["Qty","MRP","Rate (ex-GST)","GST%","Line Total"].includes(h)?"right":"left", fontWeight:700, fontSize:11, color:T.textSub, background: T.isDark?"rgba(255,255,255,0.05)":"rgba(0,0,0,0.04)", letterSpacing:"0.04em", borderBottom:`1px solid ${T.borderSubtle}`, whiteSpace:"nowrap" }}>{h}</th>
+                              <th key={i} style={{ padding:"10px 14px", textAlign:["Qty","MRP","Rate (ex-GST)","GST%","Line Total"].includes(h)?"right":"left", fontWeight:800, fontSize:11, color:T.textSub, letterSpacing:"0.05em", borderBottom:`1px solid ${T.borderSubtle}`, whiteSpace:"nowrap", textTransform: "uppercase" }}>{h}</th>
                             ))}
                           </tr></thead>
                           <tbody>
@@ -246,35 +246,39 @@ ${sharedStyle}
                               const taxable = rate > 0 ? effPrice * 100 / (100 + rate) : effPrice;
                               const gst = qty * effPrice - qty * taxable;
                               return (
-                                <tr key={idx} style={{ borderBottom:`1px solid ${T.borderSubtle}40` }}>
-                                  <td style={{ padding:"5px 8px", color:T.textMuted }}>{idx+1}</td>
-                                  <td style={{ padding:"5px 8px", fontWeight:600, color:T.text }}>{it.productName||"—"}{it.isDamaged&&<span style={{color:T.red,fontSize:11,marginLeft:6}}> DMG</span>}</td>
-                                  <td style={{ padding:"5px 8px", color:T.textSub, fontFamily:"monospace" }}>{it.hsn||"—"}</td>
-                                  <td style={{ padding:"5px 8px", textAlign:"right", fontWeight:600, color:T.text }}>{qty}</td>
-                                  <td style={{ padding:"5px 8px", color:T.textMuted }}>{it.unit||"pcs"}</td>
-                                  <td style={{ padding:"5px 8px", textAlign:"right", color:T.textSub }}>{fmtCur(it.mrp||it.effectivePrice||it.price||0)}</td>
-                                  <td style={{ padding:"5px 8px", textAlign:"right", color:T.textSub }}>{fmtCur(taxable)}</td>
-                                  <td style={{ padding:"5px 8px", textAlign:"right", color:T.amber }}>{rate > 0 ? rate+"%" : "—"}</td>
-                                  <td style={{ padding:"5px 8px", textAlign:"right", fontWeight:700, color:T.text }}>{fmtCur(qty*effPrice)}</td>
+                                <tr key={idx} className="liquid-trans" style={{ borderBottom:`1px solid ${T.borderSubtle}` }}>
+                                  <td style={{ padding:"10px 14px", color:T.textMuted, fontWeight: 600 }}>{idx+1}</td>
+                                  <td style={{ padding:"10px 14px", fontWeight:700, color:T.text }}>{it.productName||"—"}{it.isDamaged&&<span style={{color:T.red,fontSize:11,marginLeft:8,fontWeight:800}}>DMG</span>}</td>
+                                  <td style={{ padding:"10px 14px", color:T.textSub, fontFamily:"monospace", fontWeight: 500 }}>{it.hsn||"—"}</td>
+                                  <td style={{ padding:"10px 14px", textAlign:"right", fontWeight:700, color:T.text }}>{qty}</td>
+                                  <td style={{ padding:"10px 14px", color:T.textMuted, fontWeight: 500 }}>{it.unit||"pcs"}</td>
+                                  <td style={{ padding:"10px 14px", textAlign:"right", color:T.textSub, fontWeight: 600 }}>{fmtCur(it.mrp||it.effectivePrice||it.price||0)}</td>
+                                  <td style={{ padding:"10px 14px", textAlign:"right", color:T.textSub, fontWeight: 600 }}>{fmtCur(taxable)}</td>
+                                  <td style={{ padding:"10px 14px", textAlign:"right", color:T.amber, fontWeight: 700 }}>{rate > 0 ? rate+"%" : "—"}</td>
+                                  <td style={{ padding:"10px 14px", textAlign:"right", fontWeight:800, color:T.text, fontSize: 13 }}>{fmtCur(qty*effPrice)}</td>
                                 </tr>
                               );
                             })}
                           </tbody>
                         </table>
                       </div>
+                      
                       <div style={{ display:"flex", justifyContent:"flex-end" }}>
-                        <table style={{ fontSize:12, borderCollapse:"collapse", minWidth:220 }}>
-                          <tbody>
-                            <tr><td style={{ padding:"3px 8px", color:T.textSub }}>Subtotal (MRP)</td><td style={{ padding:"3px 8px", textAlign:"right", fontWeight:600, color:T.text }}>{fmtCur(b.subtotal)}</td></tr>
-                            {(b.discAmount||0)>0 && <tr><td style={{ padding:"3px 8px", color:T.red }}>Discount</td><td style={{ padding:"3px 8px", textAlign:"right", color:T.red }}>–{fmtCur(b.discAmount)}</td></tr>}
-                            {calcBillGst(b)>0 && <tr><td style={{ padding:"3px 8px", color:T.amber }}>GST (incl.)</td><td style={{ padding:"3px 8px", textAlign:"right", color:T.amber }}>{fmtCur(calcBillGst(b))}</td></tr>}
-                            {b.paymentMode && <tr><td style={{ padding:"3px 8px", color:T.textMuted, fontSize:11 }}>Payment</td><td style={{ padding:"3px 8px", textAlign:"right", fontSize:11, color:T.textSub }}>{b.paymentMode}</td></tr>}
-                            <tr style={{ borderTop:`2px solid ${T.borderSubtle}` }}><td style={{ padding:"5px 8px", fontWeight:700, color:T.text }}>Total</td><td style={{ padding:"5px 8px", textAlign:"right", fontWeight:800, fontSize:14, color:T.accent }}>{fmtCur(b.total)}</td></tr>
-                          </tbody>
-                        </table>
+                        <div className="glass" style={{ borderRadius: T.radius, padding: "16px 20px", minWidth: 260 }}>
+                          <table style={{ fontSize:13, borderCollapse:"collapse", width: "100%" }}>
+                            <tbody>
+                              <tr><td style={{ padding:"6px 0", color:T.textSub, fontWeight: 600 }}>Subtotal (MRP)</td><td style={{ padding:"6px 0", textAlign:"right", fontWeight:700, color:T.text }}>{fmtCur(b.subtotal)}</td></tr>
+                              {(b.discAmount||0)>0 && <tr><td style={{ padding:"6px 0", color:T.red, fontWeight: 600 }}>Discount</td><td style={{ padding:"6px 0", textAlign:"right", color:T.red, fontWeight: 700 }}>–{fmtCur(b.discAmount)}</td></tr>}
+                              {calcBillGst(b)>0 && <tr><td style={{ padding:"6px 0", color:T.amber, fontWeight: 600 }}>GST (incl.)</td><td style={{ padding:"6px 0", textAlign:"right", color:T.amber, fontWeight: 700 }}>{fmtCur(calcBillGst(b))}</td></tr>}
+                              {b.paymentMode && <tr><td style={{ padding:"6px 0", color:T.textMuted, fontSize:12, fontWeight: 500 }}>Payment Mode</td><td style={{ padding:"6px 0", textAlign:"right", fontSize:12, color:T.textSub, fontWeight: 600 }}>{b.paymentMode}</td></tr>}
+                              <tr style={{ borderTop:`2px solid ${T.borderSubtle}` }}><td style={{ padding:"12px 0 0", fontWeight:800, color:T.text, fontSize: 14 }}>Grand Total</td><td style={{ padding:"12px 0 0", textAlign:"right", fontWeight:800, fontSize:18, color:T.accent }}>{fmtCur(b.total)}</td></tr>
+                            </tbody>
+                          </table>
+                        </div>
                       </div>
-                      {b.ewayBill && <div style={{ marginTop:8, fontSize:11, color:T.blue, padding:"6px 10px", borderRadius: T.radius, background:T.blueBg }}> E-Way: {b.ewayBillNo} · {b.transportName} · {b.vehicleNo}</div>}
-                      {b.notes && <div style={{ fontSize:11, color:T.textSub, marginTop:6, fontStyle:"italic" }}>Note: {b.notes}</div>}
+                      
+                      {b.ewayBill && <div className="liquid-trans" style={{ marginTop:16, fontSize:12, color:T.blue, padding:"10px 14px", borderRadius: T.radius, background:T.blueBg, fontWeight: 600 }}> E-Way: {b.ewayBillNo} · {b.transportName} · {b.vehicleNo}</div>}
+                      {b.notes && <div style={{ fontSize:12, color:T.textSub, marginTop:12, fontStyle:"italic", fontWeight: 500, background: T.isDark ? "#27272a" : "#F1F5F9", padding: "10px 14px", borderRadius: T.radius }}>Note: {b.notes}</div>}
                     </div>
                   </td>
                 </tr>}
@@ -282,27 +286,24 @@ ${sharedStyle}
             })}
           </tbody>
         </table>
-        {saleBills.length === 0 && <div style={{ padding: "40px 0", textAlign: "center", color: T.textMuted }}>No sales bills in selected period</div>}
+        {saleBills.length === 0 && <div style={{ padding: "60px 0", textAlign: "center", color: T.textMuted, fontSize: 14, fontWeight: 600 }}>No sales bills found in this period</div>}
       </div>
       <Pager total={saleBills.length} page={pg} ps={ps} setPage={setPg} setPs={setPs} />
     </div>
 
-    <Modal open={modal} onClose={() => setModal(false)} title={`New Sale Bill${isManager?" (Requires Approval)":""}`} width={720}
+    <Modal open={modal} onClose={() => setModal(false)} title={`New Sale Bill${isManager?" (Requires Approval)":""}`} width={800}
       footer={isManager
-        ? <><GBtn v="ghost" onClick={() => setModal(false)}>Cancel</GBtn><GBtn v="green" type="submit" form="sale-form" icon={<Send size={13}/>}>Submit for Approval</GBtn></>
+        ? <><GBtn v="ghost" onClick={() => setModal(false)}>Cancel</GBtn><GBtn v="green" type="submit" form="sale-form" icon={<Send size={14}/>}>Submit for Approval</GBtn></>
         : <><GBtn v="ghost" onClick={() => setModal(false)}>Cancel</GBtn><GBtn type="submit" form="sale-form">Save Sale Bill</GBtn></>}>
       <BillForm type="sale" bills={bills} onSave={handleSaveBill} products={products} vendors={vendors} getStock={getStock} invoiceSettings={invoiceSettings} />
     </Modal>
 
-    <Modal open={Boolean(editBill)} onClose={() => setEditBill(null)} title={`Edit: ${editBill?.billNo}`} width={720}
-      footer={<><GBtn v="ghost" onClick={() => setEditBill(null)}>Cancel</GBtn><GBtn type="submit" form="sale-form" icon={<Edit2 size={13}/>}>Save Changes</GBtn></>}>
+    <Modal open={Boolean(editBill)} onClose={() => setEditBill(null)} title={`Edit: ${editBill?.billNo}`} width={800}
+      footer={<><GBtn v="ghost" onClick={() => setEditBill(null)}>Cancel</GBtn><GBtn type="submit" form="sale-form" icon={<Edit2 size={14}/>}>Save Changes</GBtn></>}>
       {editBill && <BillForm type="sale" bills={bills} onSave={handleEditBill} products={products} vendors={vendors} getStock={getStock} existingBill={editBill} invoiceSettings={invoiceSettings} />}
     </Modal>
 
     {invoiceBill && <InvoiceModal bill={invoiceBill} invSettings={invoiceSettings||{}} vendors={vendors} products={products} onClose={() => setInvoiceBill(null)} />}
-
-
-
 
     <DeleteConfirmModal
       open={!!delBulkConfirm}
