@@ -133,10 +133,10 @@ export default function Approvals({ ctx }) {
     
     <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 12 }}>
       <div style={{ display: "flex", gap: 8 }}>
-        {["pending", "history"].map(t => <button key={t} onClick={() => { setTab(t); setSelected(new Set()); setEntityFilter("all"); }} style={{ padding: "8px 20px", borderRadius: T.radiusFull, fontSize: 13, fontWeight: 700, border: `1px solid ${tab === t ? T.accent : T.borderSubtle}`, cursor: "pointer", background: tab === t ? T.accent : "transparent", color: tab === t ? "#fff" : T.textSub, transition: "all .2s ease" }}>{t === "pending" ? `Pending (${pending.length})` : `History (${hist.length})`}</button>)}
+        {["pending", "history"].map(t => <button key={t} className="liquid-trans" onClick={() => { setTab(t); setSelected(new Set()); setEntityFilter("all"); }} style={{ padding: "8px 20px", borderRadius: T.radiusFull, fontSize: 13, fontWeight: 700, border: `1px solid ${tab === t ? T.accent : T.borderSubtle}`, cursor: "pointer", background: tab === t ? T.accent : "transparent", color: tab === t ? "#fff" : T.textSub, boxShadow: tab === t ? `0 4px 12px ${T.accent}30` : "none" }}>{t === "pending" ? `Pending (${pending.length})` : `History (${hist.length})`}</button>)}
       </div>
       {tab === "history" && hist.length > 0 && (
-        <button className="btn-danger" style={{ padding: "8px 16px", fontSize: 13 }} onClick={() => {
+        <button className="btn-danger spring-in" style={{ padding: "8px 16px", fontSize: 13 }} onClick={() => {
           if (window.confirm("Clear all approved/declined history? Pending requests are not affected.")) {
             saveChangeReqs(changeReqs.filter(r => r.status === "pending"));
           }
@@ -144,14 +144,14 @@ export default function Approvals({ ctx }) {
       )}
     </div>
 
-    <div style={{ display: "flex", flexWrap: "wrap", gap: 8, alignItems: "center", padding: "12px 16px", background: T.surface, borderRadius: T.radius, border: `1px solid ${T.border}` }}>
+    <div className="glass spring-in" style={{ display: "flex", flexWrap: "wrap", gap: 8, alignItems: "center", padding: "12px 16px", borderRadius: T.radius }}>
       <Filter size={16} color={T.textMuted} style={{ marginRight: 4 }} />
       {ENTITY_FILTERS.map(f => {
         const count = (tab === "pending" ? pending : hist).filter(r => f.id === "all" || r.entity === f.id).length;
         if (count === 0 && f.id !== "all") return null;
         return (
-          <button key={f.id} onClick={() => { setEntityFilter(f.id); setSelected(new Set()); }}
-            style={{ padding: "6px 14px", borderRadius: T.radiusFull, fontSize: 12, fontWeight: 600, border: `1px solid ${entityFilter === f.id ? T.accent : "transparent"}`, cursor: "pointer", background: entityFilter === f.id ? T.accent + "15" : T.isDark ? "#27272a" : "#F1F5F9", color: entityFilter === f.id ? T.accent : T.textSub, transition: "all .2s ease" }}>
+          <button key={f.id} className="liquid-trans" onClick={() => { setEntityFilter(f.id); setSelected(new Set()); }}
+            style={{ padding: "6px 14px", borderRadius: T.radiusFull, fontSize: 12, fontWeight: 600, border: `1px solid ${entityFilter === f.id ? T.accent : "transparent"}`, cursor: "pointer", background: entityFilter === f.id ? T.accent + "15" : T.isDark ? "rgba(255,255,255,0.05)" : "rgba(0,0,0,0.04)", color: entityFilter === f.id ? T.accent : T.textSub }}>
             {f.label} {count > 0 ? `(${count})` : ""}
           </button>
         );
@@ -159,22 +159,22 @@ export default function Approvals({ ctx }) {
     </div>
 
     {tab === "pending" && shown.length > 0 && (
-      <div className="glass" style={{ display: "flex", alignItems: "center", gap: 12, padding: "14px 20px", borderRadius: T.radius, flexWrap: "wrap" }}>
+      <div className="glass spring-in" style={{ display: "flex", alignItems: "center", gap: 12, padding: "14px 20px", borderRadius: T.radius, flexWrap: "wrap", background: T.surfaceStrong }}>
         <label style={{ display: "flex", alignItems: "center", gap: 8, cursor: "pointer", fontSize: 13, fontWeight: 600, color: T.text }}>
-          <input type="checkbox" className="cb" checked={allSelected} onChange={toggleAll} />
+          <input type="checkbox" className="cb liquid-trans" checked={allSelected} onChange={toggleAll} />
           Select All ({shown.length})
         </label>
         {selected.size > 0 && <>
-          <span style={{ fontSize: 13, fontWeight: 700, color: T.accent, marginLeft: 8 }}>{selected.size} selected</span>
+          <span className="fade-up" style={{ fontSize: 13, fontWeight: 700, color: T.accent, marginLeft: 8 }}>{selected.size} selected</span>
           <GBtn sz="sm" onClick={bulkApprove} icon={<ThumbsUp size={14} />}>Approve All</GBtn>
           <GBtn v="danger" sz="sm" onClick={bulkDecline} icon={<ThumbsDown size={14} />}>Decline All</GBtn>
-          <button onClick={() => setSelected(new Set())} style={{ marginLeft: "auto", background: "none", border: "none", cursor: "pointer", fontSize: 12, fontWeight: 600, color: T.textMuted }}>Clear Selection</button>
+          <button className="liquid-trans" onClick={() => setSelected(new Set())} style={{ marginLeft: "auto", background: "none", border: "none", cursor: "pointer", fontSize: 12, fontWeight: 600, color: T.textMuted }}>Clear Selection</button>
         </>}
       </div>
     )}
 
-    {shown.length === 0 && <div className="glass" style={{ padding: "80px 20px", textAlign: "center", borderRadius: T.radius }}>
-      <div style={{ width: 64, height: 64, borderRadius: "50%", background: `${T.green}15`, display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 16px" }}>
+    {shown.length === 0 && <div className="glass spring-in" style={{ padding: "80px 20px", textAlign: "center", borderRadius: T.radius }}>
+      <div className="liquid-trans" style={{ width: 64, height: 64, borderRadius: "50%", background: `${T.green}15`, display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 16px", boxShadow: `0 0 20px ${T.green}30` }}>
         <CheckCircle size={32} color={T.green} />
       </div>
       <div style={{ fontWeight: 700, color: T.text, fontSize: 18, marginBottom: 8 }}>All Caught Up</div>
@@ -182,13 +182,13 @@ export default function Approvals({ ctx }) {
     </div>}
 
     <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
-      {shown.map(req => <div key={req.id} className="glass fade-up" style={{ padding: 24, borderRadius: T.radius, borderLeft: `4px solid ${sc[req.status]}` }}>
+      {shown.map((req, i) => <div key={req.id} className="glass fade-up liquid-trans" style={{ padding: 24, borderRadius: T.radius, borderLeft: `4px solid ${sc[req.status]}`, animationDelay: `${i * 0.05}s` }}>
         <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", flexWrap: "wrap", gap: 12, marginBottom: 16 }}>
           <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
             {req.status === "pending" && (
-              <input type="checkbox" className="cb" checked={selected.has(req.id)} onChange={() => toggleSel(req.id)} onClick={e => e.stopPropagation()} />
+              <input type="checkbox" className="cb liquid-trans" checked={selected.has(req.id)} onChange={() => toggleSel(req.id)} onClick={e => e.stopPropagation()} />
             )}
-            <div style={{ width: 42, height: 42, borderRadius: T.radius, background: `${sc[req.status]}15`, display: "flex", alignItems: "center", justifyContent: "center" }}>
+            <div style={{ width: 42, height: 42, borderRadius: T.radius, background: `${sc[req.status]}15`, display: "flex", alignItems: "center", justifyContent: "center", boxShadow: `0 4px 12px ${sc[req.status]}20` }}>
               {req.action === "delete" ? <Trash2 size={20} color={sc[req.status]} /> : req.action === "update" ? <Edit2 size={20} color={sc[req.status]} /> : <Plus size={20} color={sc[req.status]} />}
             </div>
             <div>
@@ -202,7 +202,7 @@ export default function Approvals({ ctx }) {
         </div>
 
         {req.action === "delete" && (
-          <div style={{ marginBottom: 16, padding: "12px 16px", borderRadius: T.radius, background: T.redBg, border: `1px solid ${T.red}30`, fontSize: 13, color: T.red, display: "flex", alignItems: "center", gap: 10 }}>
+          <div className="spring-in" style={{ marginBottom: 16, padding: "12px 16px", borderRadius: T.radius, background: T.redBg, border: `1px solid ${T.red}30`, fontSize: 13, color: T.red, display: "flex", alignItems: "center", gap: 10 }}>
             <Trash2 size={16} />
             <span><strong>Delete Request</strong> — approving will permanently remove this {req.entity} record{req.entity === "sale" || req.entity === "purchase" ? " and all its transactions" : ""}.</span>
           </div>
@@ -239,14 +239,14 @@ export default function Approvals({ ctx }) {
         )}
 
         {req.status === "pending" && declining !== req.id && (
-          <div style={{ display: "flex", gap: 12, marginTop: 16, paddingTop: 16, borderTop: `1px solid ${T.borderSubtle}` }}>
+          <div className="spring-in" style={{ display: "flex", gap: 12, marginTop: 16, paddingTop: 16, borderTop: `1px solid ${T.borderSubtle}` }}>
             <GBtn onClick={() => approve(req)} icon={<ThumbsUp size={14} />}>Approve Request</GBtn>
             <GBtn v="ghost" onClick={() => setDeclining(req.id)} icon={<ThumbsDown size={14} />} style={{ color: T.red }}>Decline</GBtn>
           </div>
         )}
 
         {declining === req.id && (
-          <div style={{ marginTop: 16, paddingTop: 16, borderTop: `1px solid ${T.borderSubtle}`, display: "flex", flexDirection: "column", gap: 12 }}>
+          <div className="spring-down" style={{ marginTop: 16, paddingTop: 16, borderTop: `1px solid ${T.borderSubtle}`, display: "flex", flexDirection: "column", gap: 12 }}>
             <Field label="Decline Reason (Optional)"><GIn value={note} onChange={e => setNote(e.target.value)} placeholder="Provide a reason for declining..." /></Field>
             <div style={{ display: "flex", gap: 10 }}>
               <GBtn v="danger" onClick={() => decline(req)} icon={<XCircle size={14} />}>Confirm Decline</GBtn>
