@@ -1,5 +1,5 @@
 import React, { useState, useMemo, useEffect } from "react";
-import { Plus, X, FileText, Search, ChevronDown, ChevronUp, Truck } from "lucide-react";
+import { Plus, X, FileText, ChevronDown, ChevronUp, Truck } from "lucide-react";
 import { useT } from "../theme";
 import { uid, today, fmtCur, fetchPincodeData, normaliseState, safeNum } from "../utils";
 import { GIn, GS, GTa, GBtn, Lbl, Field } from "./UI";
@@ -189,7 +189,7 @@ export default function BillForm({ type, bills, onSave, products, vendors, getSt
           ? <span style={{ fontSize: 15, fontWeight: 800, color: T.accent, letterSpacing: "0.02em" }}>{billNo || "Series not set"}</span>
           : <span style={{ fontSize: 14, fontWeight: 800, color: T.accent, letterSpacing: "0.02em" }}>{purchaseInvoiceNo || "Enter vendor invoice no."}</span>}
         {isEdit && <span className="spring-in" style={{ fontSize:11, background: T.amber, color: "#fff", padding: "2px 8px", borderRadius: T.radiusFull, fontWeight: 800, letterSpacing: "0.05em", boxShadow: `0 2px 6px ${T.amber}50` }}>EDITING</span>}
-        <span style={{ fontSize: 12, color: T.textSub, marginLeft: "auto", fontWeight: 600 }}>
+        <span className="hide-mob" style={{ fontSize: 12, color: T.textSub, marginLeft: "auto", fontWeight: 600 }}>
           {type === "sale" ? "Sales Bill — MRP incl. GST" : "Purchase Order — Cost ex-GST"}
         </span>
       </div>
@@ -272,16 +272,19 @@ export default function BillForm({ type, bills, onSave, products, vendors, getSt
         </div>
       )}
 
-      <div className="glass" style={{ borderRadius: T.radius, overflow: "hidden" }}>
+      {/* PRODUCTS SECTION - OVERFLOW CLIPPING FIXED */}
+      <div className="glass" style={{ borderRadius: T.radius, overflow: "visible", padding: 0 }}>
         <div style={{ padding: "16px 20px", background: T.surfaceStrong, borderBottom: `1px solid ${T.borderSubtle}` }}>
           <Lbl c="Line Items" req />
         </div>
         <div style={{ overflow: "visible" }}>
+          
           <div className="hide-mob" style={{ display: "grid", gridTemplateColumns: "1fr 80px 120px 100px 32px", gap: 12, padding: "12px 20px", background: T.isDark ? "rgba(255,255,255,0.02)" : "rgba(0,0,0,0.02)", borderBottom: `1px solid ${T.borderSubtle}` }}>
             {["Product", "Qty", type === "sale" ? "MRP (incl GST)" : "Cost (ex-GST)", "Line Total", ""].map((h, i) => (
               <div key={i} style={{ fontSize:11, fontWeight: 800, color: T.textMuted, letterSpacing: "0.05em", textTransform: "uppercase" }}>{h}</div>
             ))}
           </div>
+          
           {items.map((item, i) => {
             const pr = products.find(p => p.id === item.productId);
             const stk = item.productId ? getStock(item.productId) : null;
@@ -292,9 +295,11 @@ export default function BillForm({ type, bills, onSave, products, vendors, getSt
             const lineTotal = type === "sale" ? effectiveLine : lineBase + lineGst;
 
             return (
-              <div key={item.id} className="liquid-trans" style={{ borderBottom: `1px solid ${T.borderSubtle}`, padding: "16px 20px", background: T.surfaceGlass }}>
-                <div className="hide-mob" style={{ display: "grid", gridTemplateColumns: "1fr 80px 120px 100px 32px", gap: 12, alignItems: "start" }}>
-                  <div>
+              <div key={item.id} className="liquid-trans" style={{ borderBottom: `1px solid ${T.borderSubtle}`, padding: "16px 20px", background: T.surfaceGlass, overflow: "visible" }}>
+                
+                {/* Desktop View */}
+                <div className="hide-mob" style={{ display: "grid", gridTemplateColumns: "1fr 80px 120px 100px 32px", gap: 12, alignItems: "start", overflow: "visible" }}>
+                  <div style={{ overflow: "visible" }}>
                     <ProductSearch value={item.productId} onChange={v => upItem(item.id, "productId", v)} products={products} getStock={getStock} placeholder={`Search Product ${i + 1}`} />
                     {stk !== null && (
                       <div className="spring-in" style={{ fontSize:11, marginTop: 6, fontWeight: 600, color: stk <= 0 ? T.red : stk <= (pr?.minStock || 5) ? T.amber : T.textMuted }}>
@@ -316,8 +321,9 @@ export default function BillForm({ type, bills, onSave, products, vendors, getSt
                   </button>
                 </div>
 
-                <div className="bill-item-sub" style={{ display: "none" }}>
-                  <div style={{ marginBottom: 12 }}>
+                {/* Mobile View - Display toggled by CSS */}
+                <div className="bill-item-sub">
+                  <div style={{ marginBottom: 12, overflow: "visible" }}>
                     <ProductSearch value={item.productId} onChange={v => upItem(item.id, "productId", v)} products={products} getStock={getStock} placeholder={`Search Product ${i + 1}`} />
                   </div>
                   <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 10 }}>
