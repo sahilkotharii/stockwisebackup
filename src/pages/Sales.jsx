@@ -1,7 +1,7 @@
 import React, { useState, useMemo, useEffect } from "react";
 import { Plus, X, Eye, Trash2, Send, Edit2, TrendingUp, DollarSign, FileText, Package, Printer, Download } from "lucide-react";
 import { useT } from "../theme";
-import { KCard, GBtn, DeleteConfirmModal, GIn, GS, Field, Modal, Pager, PeriodBar, SearchInput } from "../components/UI";
+import { KCard, GBtn, DeleteConfirmModal, GS, Modal, Pager, PeriodBar, SearchInput } from "../components/UI";
 import BillForm from "../components/BillForm";
 import InvoiceModal, { buildHTML } from "../components/InvoiceModal";
 import { uid, today, fmtCur, fmtDate, inRange, calcBillGst, safeDate, getPresetDate, safeNum } from "../utils";
@@ -28,8 +28,6 @@ export default function Sales({ ctx }) {
   const [delBulkConfirm, setDelBulkConfirm] = useState(false);
   useEffect(() => setPg(1), [df, dt, vendorF, search, ps]);
 
-  const handlePreset = k => { setPreset(k); setDf(getPresetDate(k)); setDt(today()); };
-
   const periodSaleBills = useMemo(() => bills.filter(b =>
     b.type === "sale" && inRange(b.date, df, dt) && (vendorF ? b.vendorId === vendorF : true)
   ), [bills, df, dt, vendorF]);
@@ -39,15 +37,6 @@ export default function Sales({ ctx }) {
   const netRevenueExclGst = totalRevenueInclGst - totalGstCollected;
   const unitsSold = periodSaleBills.reduce((s, b) => s + (b.items || []).reduce((si, i) => si + Number(i.qty || 0), 0), 0);
 
-  const retTxns = useMemo(() => transactions.filter(t => t.type === "return" && inRange(t.date, df, dt)), [transactions, df, dt]);
-  const returnRevenue = retTxns.reduce((s, t) => s + Number(t.qty) * Number(t.price || 0), 0);
-  const returnGst = retTxns.reduce((s, t) => {
-    const rate = safeNum(t.gstRate) || safeNum(products.find(p => p.id === t.productId)?.gstRate);
-    return s + Number(t.qty) * Number(t.price || 0) * rate / (100 + rate);
-  }, 0);
-  const finalRevenue = totalRevenueInclGst - returnRevenue;
-  const finalNetExclGst = netRevenueExclGst - (returnRevenue - returnGst);
-
   const saleBills = useMemo(() => periodSaleBills.filter(b => {
     if (search) {
       const q = search.toLowerCase();
@@ -55,8 +44,6 @@ export default function Sales({ ctx }) {
     }
     return true;
   }).sort((a, b2) => (b2.date || "").localeCompare(a.date || "")), [periodSaleBills, search]);
-
-  const pp = pid => Number(products.find(pr => pr.id === pid)?.purchasePrice || 0);
 
   const downloadBulkInvoices = () => {
     const selected = saleBills.filter(b => selBills.has(b.id));
