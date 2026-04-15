@@ -1,6 +1,5 @@
 // ╔═══════════════════════════════════════════════════════════════════╗
-// ║  App.jsx — Thin shell: theme + routing + rendering              ║
-// ║  All state management lives in src/hooks/useAppState.js         ║
+// ║  App.jsx — Thin shell: theme + routing + rendering                ║
 // ╚═══════════════════════════════════════════════════════════════════╝
 
 import React, { useEffect } from "react";
@@ -10,7 +9,7 @@ import { buildTheme, ThemeCtx, makeCSS, THEMES, ACCENT_PRESETS, CORNER_STYLES } 
 import { lsSet } from "./storage";
 import useAppState from "./hooks/useAppState";
 
-import Sidebar, { MobNav, TopBar, ROLE_PAGES } from "./components/Nav";
+import Sidebar, { MobNav, TopBar } from "./components/Nav";
 import Login from "./components/Login";
 import { Toast } from "./components/UI";
 
@@ -36,12 +35,10 @@ export default function App() {
     handleLogin, handleLogout, pull, toggleTheme,
   } = state;
 
-  // Inject shared constants into ctx (avoids circular import in hook)
   ctx.THEMES = THEMES;
   ctx.ACCENT_PRESETS = ACCENT_PRESETS;
   ctx.CORNER_STYLES = CORNER_STYLES;
 
-  // ── Build theme + inject CSS ──────────────────────────────────────────────
   const theme = buildTheme(themeId, accentKey, isDark, customColor, bgImage, cornerStyle);
   const T = theme;
 
@@ -52,35 +49,52 @@ export default function App() {
     document.body.style.background = theme.bg;
   }, [themeId, accentKey, isDark, customColor, bgImage, cornerStyle]);
 
-  // ── Page guard ────────────────────────────────────────────────────────────
+  // ── STRICT ROLE-BASED ROUTER ───────────────────────────────────────────────
   const actualPage = (() => {
-    if (!user || user.role === "admin") return page;
-    const allowed = ROLE_PAGES[user.role] || ROLE_PAGES.manager;
-    const locked = user?.lockedPages || [];
-    if (!allowed.includes(page) || locked.includes(page)) return "dashboard";
+    const role = user?.role?.toLowerCase() || "";
+    
+    // Admins see absolutely everything
+    if (role === "admin") return page;
+    
+    // Set up basic allowed pages everyone gets
+    let allowed = ["dashboard"];
+    
+    if (role.includes("sales")) {
+      allowed.push("sales", "returns", "products", "transactions");
+    } 
+    else if (role.includes("purchase")) {
+      allowed.push("purchase", "returns", "vendors", "products", "transactions");
+    } 
+    else if (role.includes("inventory") || role.includes("stock")) {
+      allowed.push("inventory", "products", "transactions", "returns");
+    } 
+    else {
+      // Fallback standard manager
+      allowed = ["dashboard", "sales", "purchase", "inventory", "reports", "products", "vendors", "transactions", "returns"];
+    }
+
+    // Force user to dashboard if they try to access an unauthorized page (like PnL)
+    if (!allowed.includes(page)) return "dashboard";
     return page;
   })();
 
-  // ── Loading screen ────────────────────────────────────────────────────────
   if (!ready) return (
     <div style={{ minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center" }}>
       <div style={{ textAlign: "center" }}>
         <div style={{ width: 54, height: 54, borderRadius: 17, background: `linear-gradient(135deg,${T.accent},${T.accentDark})`, display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 14px", animation: "pulse 1.5s ease infinite", boxShadow: `0 8px 28px ${T.accent}50` }}>
           <Layers size={24} color="#fff" />
         </div>
-        <div style={{ fontSize: 14, color: T.textMuted, fontWeight: 500 }}>Loading StockWise…</div>
+        <div style={{ fontSize: 14, color: T.textMuted, fontWeight: 500 }}>Loading ERP…</div>
       </div>
     </div>
   );
 
-  // ── Login screen ──────────────────────────────────────────────────────────
   if (!user) return (
     <ThemeCtx.Provider value={T}>
       <Login users={ctx.users} onLogin={handleLogin} logoUrl={logoUrl} />
     </ThemeCtx.Provider>
   );
 
-  // ── Main app ──────────────────────────────────────────────────────────────
   const ml = `${T.sidebarW + 24}px`;
 
   return (
@@ -88,7 +102,7 @@ export default function App() {
       {toast && <Toast msg={toast.msg} type={toast.type} />}
 
       <Sidebar page={actualPage} setPage={setPage} user={user} onLogout={handleLogout} isDark={isDark} toggleTheme={toggleTheme} ctx={ctx} />
-      <MobNav page={actualPage} setPage={setPage} user={user} onLogout={handleLogout} isDark={isDark} toggleTheme={toggleTheme} pendingCnt={ctx.changeReqs.filter(r => r.status === "pending").length} ctx={ctx} />
+      <MobNav page={actualPage} setPage={setPage} user={user} onLogout={handleLogout} isDark={isDark} toggleTheme={toggleTheme} ctx={ctx} />
 
       <div className="main-wrap" style={{ marginLeft: ml, padding: "12px 16px 24px", minHeight: "100vh", transition: "margin .2s" }}>
         <TopBar page={actualPage} user={user} syncSt={syncSt} lastSync={lastSync} onSync={pull} toggleTheme={toggleTheme} isDark={isDark} setPage={setPage} ctx={ctx} onLogout={handleLogout} />
