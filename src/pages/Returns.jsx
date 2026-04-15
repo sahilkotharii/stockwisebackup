@@ -6,10 +6,6 @@ import ProductSearch from "../components/ProductSearch";
 import VendorSearch from "../components/VendorSearch";
 import { uid, today, fmtCur, fmtDate, inRange, getPresetDate, normaliseState, safeNum } from "../utils";
 
-const PRESETS = [
-  { k: "30d", l: "30d" }, { k: "90d", l: "90d" }, { k: "6m", l: "6M" }, { k: "1y", l: "1Y" }
-];
-
 export default function Returns({ ctx }) {
   const T = useT();
   const { transactions, saveTransactions, products, vendors, getStock, user, addLog, addChangeReq, invoiceSettings } = ctx;
@@ -17,11 +13,11 @@ export default function Returns({ ctx }) {
   const isManager = user.role === "manager";
 
   const [modal, setModal] = useState(false);
-  const [returnType, setReturnType] = useState("sales_return"); // "sales_return" | "purchase_return"
+  const [returnType, setReturnType] = useState("sales_return"); 
   const [preset, setPreset] = useState("30d");
   const [df, setDf] = useState(getPresetDate("30d"));
   const [dt, setDt] = useState(today());
-  const [typeFilter, setTypeFilter] = useState("all"); // all | sales_return | purchase_return | damaged
+  const [typeFilter, setTypeFilter] = useState("all"); 
   const [pg, setPg] = useState(1); const [ps, setPs] = useState(20);
   const [search, setSearch] = useState("");
   const [selRets, setSelRets] = useState(new Set());
@@ -192,7 +188,7 @@ export default function Returns({ ctx }) {
     <div className="kgrid" style={{ gap: 20 }}>
       <KCard label="Sales Returns" value={fmtCur(salesRetValue)} sub={`${salesRets.length} entries · ${salesRets.reduce((s,t)=>s+Number(t.qty),0)} units`} icon={RotateCcw} color={T.red} onClick={() => setTypeFilter(typeFilter === "sales_return" ? "all" : "sales_return")} active={typeFilter === "sales_return"} />
       <KCard label="Purchase Returns" value={fmtCur(purRetValue)} sub={`${purRets.length} entries · ${purRets.reduce((s,t)=>s+Number(t.qty),0)} units`} icon={Truck} color={T.blue} onClick={() => setTypeFilter(typeFilter === "purchase_return" ? "all" : "purchase_return")} active={typeFilter === "purchase_return"} />
-      <KCard label="Damaged in Inventory" value={String(totalDamagedUnits)} sub={`Value: ${fmtCur(damagedInvValue)} (ex-GST)`} icon={AlertTriangle} color={T.amber} onClick={() => setTypeFilter(typeFilter === "damaged" ? "all" : "damaged")} active={typeFilter === "damaged"} noFmt />
+      <KCard label="Damaged Stock" value={String(totalDamagedUnits)} sub={`Value: ${fmtCur(damagedInvValue)} (ex-GST)`} icon={AlertTriangle} color={T.amber} onClick={() => setTypeFilter(typeFilter === "damaged" ? "all" : "damaged")} active={typeFilter === "damaged"} noFmt />
     </div>
 
     {totalDamagedUnits > 0 && (
@@ -259,7 +255,7 @@ export default function Returns({ ctx }) {
                 }}
               />
             </th>
-            {["Date", "Bill No", "Type", "Items", "Total Qty", "Total Value", "Vendor", "Damaged", ""].map((h, i) => (
+            {["Date", "Bill No", "Type", "Items", "Total Qty", "Total Value", "Vendor/Customer", "Damaged", ""].map((h, i) => (
               <th key={i} className="th" style={{ textAlign: ["Total Qty","Total Value"].includes(h) ? "right" : "left", padding: "14px 16px", width: h === "" ? 80 : "auto" }}>{h}</th>
             ))}
           </tr></thead>
@@ -289,7 +285,7 @@ export default function Returns({ ctx }) {
                   </td>
                   <td className="td m" style={{ fontWeight: 500 }}>{fmtDate(first.date)}</td>
                   <td className="td" style={{ fontWeight:800, color:T.accent, letterSpacing: "0.02em" }}>{first.billNo || "—"}</td>
-                  <td className="td"><span className="badge liquid-trans" style={{ background:typeColor+"18", color:typeColor }}>{typeLabel}</span></td>
+                  <td className="td"><span className="badge liquid-trans" style={{ background:typeColor+"15", color:typeColor }}>{typeLabel}</span></td>
                   <td className="td">
                     {group.length === 1
                       ? <><div style={{ fontWeight:700, color:T.text, fontSize: 13 }}>{products.find(p=>p.id===first.productId)?.name||"—"}</div><div style={{ fontSize:11, color:T.textMuted, marginTop: 2 }}>{products.find(p=>p.id===first.productId)?.sku}</div></>
@@ -367,7 +363,6 @@ export default function Returns({ ctx }) {
       <Pager total={groupedReturns.length} page={pg} ps={ps} setPage={setPg} setPs={setPs} />
     </div>
 
-    {/* New Return Modal */}
     <Modal open={modal} onClose={() => { setModal(false); resetForm(); setEditTxn(null); }} title={`${editTxn ? "Edit" : "Record"} Return${isManager ? " (Requires Approval)" : ""}`} width={800}
       footer={<><GBtn v="ghost" onClick={() => { setModal(false); resetForm(); setEditTxn(null); }}>Cancel</GBtn><GBtn onClick={handleSave} icon={<RotateCcw size={14} />}>Save Return</GBtn></>}>
       <div style={{ display: "flex", flexDirection: "column", gap: 24 }}>
