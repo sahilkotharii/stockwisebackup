@@ -14,7 +14,7 @@ export default function ProductSearch({ value, onChange, products, placeholder, 
   const calcPos = useCallback(() => {
     if (inputRef.current) {
       const r = inputRef.current.getBoundingClientRect();
-      setPos({ top: r.bottom + 4, left: r.left, width: Math.max(r.width, 280) });
+      setPos({ top: r.bottom + 6, left: r.left, width: Math.max(r.width, 320) });
     }
   }, []);
 
@@ -66,11 +66,11 @@ export default function ProductSearch({ value, onChange, products, placeholder, 
   return (
     <div ref={wrapRef} style={{ position: "relative" }}>
       <div style={{ position: "relative" }}>
-        <Search size={11} style={{ position: "absolute", left: 9, top: "50%", transform: "translateY(-50%)", color: T.textMuted, pointerEvents: "none", zIndex: 1 }} />
+        <Search size={14} style={{ position: "absolute", left: 12, top: "50%", transform: "translateY(-50%)", color: T.textMuted, pointerEvents: "none", zIndex: 1 }} />
         <input
           ref={inputRef}
-          className="inp"
-          style={{ paddingLeft: 26 }}
+          className="inp liquid-trans"
+          style={{ paddingLeft: 34, paddingRight: value && !isOpen ? 34 : 14, fontWeight: selected && !isOpen ? 700 : 500 }}
           value={displayValue}
           placeholder={placeholder || "Search product…"}
           autoComplete="off"
@@ -82,39 +82,39 @@ export default function ProductSearch({ value, onChange, products, placeholder, 
           }}
         />
         {value && !isOpen && (
-          <button type="button" onClick={e => { e.stopPropagation(); onChange(""); }}
-            style={{ position: "absolute", right: 6, top: "50%", transform: "translateY(-50%)", background: "none", border: "none", cursor: "pointer", color: T.textMuted, fontSize: 14, lineHeight: 1, zIndex: 1 }}>
-            <X size={13} />
+          <button type="button" className="liquid-trans" onClick={e => { e.stopPropagation(); onChange(""); }}
+            style={{ position: "absolute", right: 8, top: "50%", transform: "translateY(-50%)", background: T.isDark ? "rgba(255,255,255,0.1)" : "rgba(0,0,0,0.06)", border: "none", cursor: "pointer", color: T.textSub, padding: 4, borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 1 }}>
+            <X size={12} />
           </button>
         )}
       </div>
       {isOpen && (
-        <div className="ps-dropdown" style={{
-          position: "fixed", top: pos.top, left: pos.left, width: pos.width, zIndex: 9999,
-          background: T.surfaceStrong, border: `1px solid ${T.accent}40`,
-          borderRadius: T.radius, boxShadow: T.shadowXl, maxHeight: 260, overflowY: "auto",
-          WebkitOverflowScrolling: "touch"
+        <div className="spring-in glass-strong" style={{
+          position: "fixed", top: pos.top, left: pos.left, width: pos.width, zIndex: 999999, // Super high z-index to break out of all modals
+          borderRadius: T.radius, maxHeight: 320, overflowY: "auto",
+          WebkitOverflowScrolling: "touch", padding: 6
         }}>
           {filtered.length === 0
-            ? <div style={{ padding: 14, fontSize: 13, color: T.textMuted }}>No products found</div>
+            ? <div style={{ padding: "16px", fontSize: 13, color: T.textMuted, textAlign: "center", fontWeight: 500 }}>No products found</div>
             : filtered.map(p => (
               <div key={p.id}
+                className="liquid-trans"
                 onMouseDown={e => { e.preventDefault(); pick(p.id); }}
                 onTouchEnd={e => { e.preventDefault(); pick(p.id); }}
                 style={{
-                  padding: "10px 12px", cursor: "pointer", minHeight: 48,
-                  borderBottom: `1px solid ${T.borderSubtle}`,
-                  background: p.id === value ? T.accentBg : "transparent"
+                  padding: "12px 14px", cursor: "pointer", borderRadius: 8,
+                  background: p.id === value ? T.accentBg : "transparent",
+                  marginBottom: 2
                 }}
-                onMouseEnter={e => e.currentTarget.style.background = T.isDark ? "rgba(255,255,255,0.08)" : "rgba(0,0,0,0.05)"}
+                onMouseEnter={e => e.currentTarget.style.background = T.isDark ? "rgba(255,255,255,0.08)" : "rgba(0,0,0,0.04)"}
                 onMouseLeave={e => e.currentTarget.style.background = p.id === value ? T.accentBg : "transparent"}
               >
-                <div style={{ fontSize: 13, fontWeight: 600, color: T.text }}>{p.name}</div>
-                <div style={{ fontSize: 11, color: T.textMuted, marginTop: 2 }}>
-                  {p.sku}
-                  {Number(p.gstRate) > 0 ? ` · GST ${Number(p.gstRate)}%` : ""}
-                  {` · MRP ₹${Number(p.mrp || 0).toLocaleString("en-IN")}`}
-                  {getStock ? ` · Stock: ${getStock(p.id)}` : ""}
+                <div style={{ fontSize: 13, fontWeight: 700, color: p.id === value ? T.accent : T.text }}>{p.name}</div>
+                <div style={{ fontSize: 11, color: T.textMuted, marginTop: 4, fontWeight: 500, display: "flex", gap: 8, flexWrap: "wrap" }}>
+                  <span style={{ fontFamily: "monospace", color: T.textSub }}>{p.sku}</span>
+                  {Number(p.gstRate) > 0 && <span>GST {Number(p.gstRate)}%</span>}
+                  <span style={{ color: T.textSub, fontWeight: 600 }}>MRP ₹{Number(p.mrp || 0).toLocaleString("en-IN")}</span>
+                  {getStock && <span style={{ color: getStock(p.id) > 0 ? T.green : T.red, fontWeight: 700 }}>Stock: {getStock(p.id)}</span>}
                 </div>
               </div>
             ))
